@@ -1,0 +1,28 @@
+# =====================================================
+# Repository-wide ignores
+# =====================================================
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Editor settings
+.vscode/
+.idea/
+
+# Log files
+*.log
+
+# Environment files (root only)
+.env
+.env.*
+!.env.example
+
+# Temporary files
+*.tmp
+*.temp
+
+# Archive files
+*.zip
+*.tar
+*.gz
