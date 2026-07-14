@@ -1,5 +1,9 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+type LoginResponse = {
+    accessToken: string;
+}
+
 export const register = async (email: string, displayName: string, password: string) => {
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
         method: "POST",
@@ -10,13 +14,14 @@ export const register = async (email: string, displayName: string, password: str
     })
 
     if (!res.ok) {
-        throw new Error("Failed to register")
+        const {message} = await res.json()
+        throw new Error(`Failed to register: ${message}`)
     }
 
     return res.json();
 }
 
-export const login = async (email: string, password: string) => {
+export const login = async (email: string, password: string): Promise<LoginResponse> => {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: {
@@ -26,7 +31,7 @@ export const login = async (email: string, password: string) => {
     })
 
     if (!res.ok) {
-        throw new Error("Failed to register")
+        throw new Error("Failed to login")
     }
 
     return res.json();

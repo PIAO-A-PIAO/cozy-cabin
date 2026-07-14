@@ -1,11 +1,14 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
 export default function HomePage() {
   const [username] = useState("User");
-
+  const router = useRouter()
   const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    router.replace('/login');
   };
 
   return (

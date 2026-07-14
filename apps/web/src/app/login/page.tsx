@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { login } from "@/lib/api/auth";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -10,17 +11,20 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  const router = useRouter();
   const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
 
     try {
-      await login(email, password);
+      const res = await login(email, password);
+      localStorage.setItem("accessToken", res.accessToken)
     } catch (err: any) {
       setError(err.message || "Invalid email or password");
     } finally {
       setIsLoading(false);
+      router.replace("/home")
     }
   };
 

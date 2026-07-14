@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { register } from "@/lib/api/auth";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
   const [displayName, setDisplayName] = useState("");
@@ -12,6 +13,8 @@ export default function RegisterPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const router = useRouter()
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -20,6 +23,7 @@ export default function RegisterPage() {
     try {
       await register(email, displayName, password);
       setIsSuccess(true);
+      router.replace("/login");
     } catch (err: any) {
       setError(err.message || "Registration failed");
     } finally {
