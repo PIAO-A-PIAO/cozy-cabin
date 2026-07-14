@@ -32,7 +32,7 @@ export class AuthService {
         return {id: newUser.id, email, displayName}
     }
 
-    async login(dto: LoginDto): Promise<{accessToken: string}> {
+    async login(dto: LoginDto) {
         const {email, password} = dto
         const existingUser: User | null = await this.prisma.user.findUnique({
             where: {email}
@@ -48,10 +48,17 @@ export class AuthService {
 
         const payload: {sub: string, email: string} = {
             sub: existingUser.id,
-            email: existingUser.email
+            email
         }
 
         const accessToken = await this.jwtService.signAsync(payload)
-        return {accessToken}
+        return {
+            accessToken,
+            user: {
+                id: existingUser.id,
+                email: existingUser.email,
+                displayName: existingUser.displayName
+            }
+        }
     } 
 }
