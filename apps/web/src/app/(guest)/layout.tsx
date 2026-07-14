@@ -1,0 +1,38 @@
+"use client"
+
+import { useContext, useEffect } from "react";
+import { AuthContext } from "../AuthProvider";
+import { useRouter } from "next/navigation";
+
+export default function GuestRoute({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  const auth = useContext(AuthContext);
+  const {user, isLoading} = auth;
+  const router = useRouter();
+  useEffect(() => {
+    if (!isLoading && user.id != "") {
+      router.replace("/home")
+    }
+  }, [user, isLoading])
+  
+  if (isLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center">
+        <p>Loading...</p>
+      </main>
+      )
+  }
+
+  if (user.id != "") {
+    return null
+  }
+
+  return (
+    <>
+      {children}
+    </>
+  );
+}

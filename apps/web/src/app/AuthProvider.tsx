@@ -12,7 +12,8 @@ type User = {
 type AuthContextValue = {
     user: User,
     setUser: (user: User) => void,
-    resetUser: () => void
+    resetUser: () => void,
+    isLoading: boolean
 }
 
 const defaultUser = {
@@ -24,28 +25,33 @@ const defaultUser = {
 export const AuthContext = createContext<AuthContextValue>({
     user: defaultUser,
     setUser: () => {},
-    resetUser: () => {}
+    resetUser: () => {},
+    isLoading: false
 })
 
 
 function AuthProvider({children}: {children: ReactNode}) {
     const [user, setUser] = useState<User>(defaultUser);
+    const [isLoading, setIsLoading] = useState<boolean>(false)
     const resetUser = () => {setUser(defaultUser)}
 
     useEffect(() => {
         const restoreSession = async () => {
             try {
+                setIsLoading(true)
                 const res = await me();
                 setUser({...res, id: res.sub})
             } catch {
                 resetUser()
+            } finally {
+                setIsLoading(false)
             }
         }
         restoreSession();
     }, [])
     
   return (
-    <AuthContext.Provider value={{user, setUser, resetUser}}>
+    <AuthContext.Provider value={{user, setUser, resetUser, isLoading}}>
         {children}
     </AuthContext.Provider>
   )
