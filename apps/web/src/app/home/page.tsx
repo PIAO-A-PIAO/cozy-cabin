@@ -1,13 +1,30 @@
 "use client";
 
+import { logout } from "@/lib/api/auth";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 export default function HomePage() {
-  const [username] = useState("User");
+  const [username, setUsername] = useState("User");
   const router = useRouter()
-  const handleLogout = () => {
-    localStorage.removeItem("accessToken");
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+
+    if (!storedUser) {
+      return;
+    }
+
+    try {
+      const user = JSON.parse(storedUser);
+      setUsername(user.displayName || user.email || "User");
+    } catch {
+      localStorage.removeItem("user");
+    }
+  }, []);
+
+  const handleLogout = async () => {
+    await logout();
     router.replace('/login');
   };
 

@@ -1,8 +1,14 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-type LoginResponse = {
-    accessToken: string;
-}
+type AuthUser = {
+    id: string;
+    email: string;
+    displayName: string;
+};
+
+type LoginResult = {
+    user: AuthUser;
+};
 
 export const register = async (email: string, displayName: string, password: string) => {
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
@@ -21,8 +27,8 @@ export const register = async (email: string, displayName: string, password: str
     return res.json();
 }
 
-export const login = async (email: string, password: string): Promise<LoginResponse> => {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+export const login = async (email: string, password: string) => {
+    const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -34,7 +40,19 @@ export const login = async (email: string, password: string): Promise<LoginRespo
         throw new Error("Failed to login")
     }
 
-    return res.json();
+    const data = await res.json();
+
+    localStorage.setItem("user", JSON.stringify(data.user));
+
+    return data;
+}
+
+export const logout = async () => {
+    await fetch("/api/auth/logout", {
+        method: "POST",
+    });
+
+    localStorage.removeItem("user");
 }
 
 

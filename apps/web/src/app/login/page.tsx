@@ -18,13 +18,12 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const res = await login(email, password);
-      localStorage.setItem("accessToken", res.accessToken)
+      await login(email, password);
+      router.replace("/home")
     } catch (err: any) {
       setError(err.message || "Invalid email or password");
     } finally {
       setIsLoading(false);
-      router.replace("/home")
     }
   };
 
