@@ -1,15 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { login } from "@/lib/api/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AuthContext } from "@/app/AuthProvider";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const auth = useContext(AuthContext);
+  const {user, setUser} = auth;
 
   const router = useRouter();
   const handleSubmit = async (e: React.SubmitEvent) => {
@@ -18,7 +22,8 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      await login(email, password);
+      const res = await login(email, password);
+      setUser(res.user)
       router.replace("/home")
     } catch (err: any) {
       setError(err.message || "Invalid email or password");

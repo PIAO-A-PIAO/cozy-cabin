@@ -41,9 +41,6 @@ export const login = async (email: string, password: string) => {
     }
 
     const data = await res.json();
-
-    localStorage.setItem("user", JSON.stringify(data.user));
-
     return data;
 }
 
@@ -51,22 +48,18 @@ export const logout = async () => {
     await fetch("/api/auth/logout", {
         method: "POST",
     });
-
-    localStorage.removeItem("user");
 }
 
 
-// export const me = async () => {
-//     const res = await fetch(`${API_BASE_URL}/auth/me`, {
-//         method: "GET",
-//         headers: {
-//             "Content-Type": "application/json",
-//         },
-//     })
+export const me = async () => {
+    const res = await fetch(`/api/auth/me`, {
+        method: "GET",
+    })
 
-//     if (!res.ok) {
-//         throw new Error("Failed to register")
-//     }
+    if (!res.ok) {
+        throw new Error("Failed to register")
+    }
 
-//     return res.json();
-// }
+    const data = await res.json()
+    return data;
+}

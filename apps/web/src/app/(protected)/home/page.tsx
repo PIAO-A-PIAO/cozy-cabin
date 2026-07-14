@@ -1,27 +1,19 @@
 "use client";
 
+import { AuthContext } from "@/app/AuthProvider";
 import { logout } from "@/lib/api/auth";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import { useContext } from "react";
 
 export default function HomePage() {
-  const [username, setUsername] = useState("User");
+  const auth = useContext(AuthContext);
+
+  if (!auth) {
+    throw new Error("HomePage must be used within AuthProvider");
+  }
+
+  const { user } = auth; 
   const router = useRouter()
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-
-    if (!storedUser) {
-      return;
-    }
-
-    try {
-      const user = JSON.parse(storedUser);
-      setUsername(user.displayName || user.email || "User");
-    } catch {
-      localStorage.removeItem("user");
-    }
-  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -32,7 +24,7 @@ export default function HomePage() {
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-900 px-4">
       <div className="w-full max-w-md bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 shadow-sm text-center">
         <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
-          Welcome, {username}
+          Welcome, {user?.displayName || user?.email || "User"}
         </h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
           You are successfully logged in.
