@@ -13,19 +13,32 @@ const MODE_LABELS: Record<TimerModeType, string> = {
   break: "Break",
 };
 
+const STORAGE_KEYS = {
+  timeRemaining: "local_timer_timeRemaining",
+  endTime: "local_timer_endTime",
+  status: "local_timer_status",
+  mode: "local_timer_mode",
+};
+
+const BUTTON_LABELS: Record<StatusType, string> = {
+  idle: "Start",
+  running: "Pause",
+  paused: "Resume",
+};
+
 function PomodoroTimer() {
   const [timerMode, setTimerMode] = useState<TimerModeType>("focus");
   const [timeRemaining, setTimeRemaining] = useState(MODE_SECONDS.focus);
   const [status, setStatus] = useState<StatusType>("idle");
 
   const clearSavedTimer = () => {
-    localStorage.removeItem("timeRemaining");
-    localStorage.removeItem("endTime");
-    localStorage.removeItem("timerStatus");
+    localStorage.removeItem(STORAGE_KEYS.timeRemaining);
+    localStorage.removeItem(STORAGE_KEYS.endTime);
+    localStorage.removeItem(STORAGE_KEYS.status);
   };
 
   const handleModeChange = (mode: TimerModeType) => {
-    localStorage.setItem("timerMode", mode)
+    localStorage.setItem(STORAGE_KEYS.mode, mode)
     setTimerMode(mode);
     setTimeRemaining(MODE_SECONDS[mode]);
     setStatus("idle");
@@ -33,33 +46,26 @@ function PomodoroTimer() {
   };
 
   const handleClick = () => {
-    localStorage.removeItem("timeRemaining");
+    localStorage.removeItem(STORAGE_KEYS.timeRemaining);
     switch (status) {
       case "idle":
-        return handleStart();
       case "paused":
-        return handleResume();
+        return handleStart();
       case "running":
         return handlePause();
     }
   };
 
   const handleStart = () => {
-    localStorage.setItem("endTime", String(Date.now() + timeRemaining * 1000));
-    localStorage.setItem("timerStatus", "running");
+    localStorage.setItem(STORAGE_KEYS.endTime, String(Date.now() + timeRemaining * 1000));
+    localStorage.setItem(STORAGE_KEYS.status, "running");
     setStatus("running");
   };
 
   const handlePause = () => {
-    localStorage.setItem("timerStatus", "paused");
-    localStorage.setItem("timeRemaining", String(timeRemaining));
+    localStorage.setItem(STORAGE_KEYS.status, "paused");
+    localStorage.setItem(STORAGE_KEYS.timeRemaining, String(timeRemaining));
     setStatus("paused");
-  };
-
-  const handleResume = () => {
-    localStorage.setItem("endTime", String(Date.now() + timeRemaining * 1000));
-    localStorage.setItem("timerStatus", "running");
-    setStatus("running");
   };
 
   const handleReset = () => {
@@ -76,20 +82,20 @@ function PomodoroTimer() {
 
   useEffect(() => {
     const restoreTimer = () => {
-      const storedTimerMode = localStorage.getItem("timerMode") as TimerModeType | null;
+      const storedTimerMode = localStorage.getItem(STORAGE_KEYS.mode) as TimerModeType | null;
       if (storedTimerMode) {
         setTimerMode(storedTimerMode);
         setTimeRemaining(MODE_SECONDS[storedTimerMode]);
       }
-      const timerStatus = localStorage.getItem("timerStatus") as StatusType | null;
+      const timerStatus = localStorage.getItem(STORAGE_KEYS.status) as StatusType | null;
 
       if (timerStatus == "paused") {
-        setTimeRemaining(Number(localStorage.getItem("timeRemaining")));
+        setTimeRemaining(Number(localStorage.getItem(STORAGE_KEYS.timeRemaining)));
         setStatus(timerStatus);
         return;
       }
 
-      const endTime = localStorage.getItem("endTime");
+      const endTime = localStorage.getItem(STORAGE_KEYS.endTime);
       if (endTime && timerStatus == "running") {
         const timeDifference = Number(endTime) - Date.now();
         const toNumber = Math.max(0, Math.floor(timeDifference / 1000));
@@ -102,7 +108,6 @@ function PomodoroTimer() {
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
-
     if (status == "running") {
       intervalId = setInterval(() => {
         setTimeRemaining((prev) => Math.max(0, prev - 1));
@@ -116,16 +121,12 @@ function PomodoroTimer() {
     };
   }, [status]);
 
-  const buttonLabel = (() => {
-    switch (status) {
-      case "idle":
-        return "Start";
-      case "running":
-        return "Pause";
-      case "paused":
-        return "Resume";
-    }
-  })();
+  useEffect(() => {
+    if (timeRemaining > 0) return;
+
+  }, [timeRemaining])
+
+  const buttonLabel = BUTTON_LABELS[status];
 
   return (
     <section className="w-full max-w-sm rounded-lg border border-zinc-200 bg-white p-6 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
