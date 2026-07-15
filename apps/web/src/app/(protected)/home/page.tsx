@@ -6,17 +6,12 @@ import { useRouter } from "next/navigation";
 import { useContext } from "react";
 
 export default function HomePage() {
-  const auth = useContext(AuthContext);
-
-  if (!auth) {
-    throw new Error("HomePage must be used within AuthProvider");
-  }
-
-  const { user } = auth; 
+  const { user, resetUser } = useContext(AuthContext); 
   const router = useRouter()
 
   const handleLogout = async () => {
     await logout();
+    resetUser();
     router.replace('/login');
   };
 
