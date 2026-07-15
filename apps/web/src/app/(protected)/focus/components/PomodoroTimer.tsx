@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react'
+
+type StatusType = "idle" | "running" | "paused"
 function PomodoroTimer() {
     const [timeRemaining, setTimeRemaining] = useState(1500)
-    const [status, setStatus] = useState<"idle" | "running" | "paused">("idle")
+    const [status, setStatus] = useState<StatusType>("idle")
 
     const handleClick = () => {
+        localStorage.removeItem("timeRemaining")
         switch (status) {
             case "idle":
                 return handleStart()
@@ -16,19 +19,24 @@ function PomodoroTimer() {
 
     const handleStart = () => {
         localStorage.setItem("endTime", String(Date.now() + timeRemaining * 1000))
+        localStorage.setItem("timerStatus", "running")
         setStatus("running")
     }
 
     const handlePause = () => {
+        localStorage.setItem("timerStatus", "paused")
+        localStorage.setItem("timeRemaining", String(timeRemaining))
         setStatus("paused")
     }
 
     const handleResume = () => {
         localStorage.setItem("endTime", String(Date.now() + timeRemaining * 1000))
+        localStorage.setItem("timerStatus", "running")
         setStatus("running")
     }
 
     const handleReset = () => {
+        localStorage.removeItem("timeRemaining")
         localStorage.removeItem("endTime")
         setTimeRemaining(1500)
         setStatus("idle")
@@ -39,6 +47,25 @@ function PomodoroTimer() {
         const second = seconds % 60
         return `${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`
     }
+
+    useEffect(() => {
+        const restoreTime = async () => {
+            const timerStatus = localStorage.getItem("timerStatus") as StatusType
+            if (timerStatus == "paused") {
+                setTimeRemaining(Number(localStorage.getItem("timeRemaining")))
+                setStatus(timerStatus)
+                return
+            }
+            const endTime = localStorage.getItem("endTime")
+            if (endTime) {
+                const timeDifference = Number(endTime) - Date.now()
+                const toNumber = Math.max(0, Math.floor(timeDifference / 1000))
+                setTimeRemaining(toNumber)
+                setStatus(timerStatus)
+            }
+        }
+        restoreTime()
+    }, [])
 
     useEffect(() => {
         let interValid: NodeJS.Timeout

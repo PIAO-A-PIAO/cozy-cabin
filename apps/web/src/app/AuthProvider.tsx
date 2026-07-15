@@ -32,13 +32,12 @@ export const AuthContext = createContext<AuthContextValue>({
 
 function AuthProvider({children}: {children: ReactNode}) {
     const [user, setUser] = useState<User>(defaultUser);
-    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [isLoading, setIsLoading] = useState<boolean>(true)
     const resetUser = () => {setUser(defaultUser)}
 
     useEffect(() => {
         const restoreSession = async () => {
             try {
-                setIsLoading(true)
                 const res = await me();
                 setUser({...res, id: res.sub})
             } catch {
