@@ -3,6 +3,7 @@
 import { useContext, useEffect } from "react";
 import { AuthContext } from "../AuthProvider";
 import { useRouter } from "next/navigation";
+import TopBar from "./TopBar";
 
 export default function ProtectedRoute({
   children,
@@ -31,8 +32,9 @@ export default function ProtectedRoute({
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
+      <TopBar />
       {children}
-    </>
+    </div>
   );
 }
