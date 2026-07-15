@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 type StatusType = "idle" | "running" | "paused";
 type TimerModeType = "focus" | "break";
@@ -106,11 +107,13 @@ function PomodoroTimer() {
     restoreTimer()
   }, []);
 
+
+
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
     if (status == "running") {
       intervalId = setInterval(() => {
-        setTimeRemaining((prev) => Math.max(0, prev - 1));
+        setTimeRemaining((prev) => prev - 1);
       }, 1000);
     }
 
@@ -122,9 +125,18 @@ function PomodoroTimer() {
   }, [status]);
 
   useEffect(() => {
-    if (timeRemaining > 0) return;
-
-  }, [timeRemaining])
+    if (timeRemaining !== 0) return;
+    const handleTimerComplete = () => {
+        if (timerMode == "focus") {
+          toast.success("🍅 Focus session complete! Time for a short break.")
+          handleModeChange("break")
+        } else {
+          toast.success("☕ Break finished! Ready to focus again?")
+          handleModeChange("focus")
+        }
+      }
+    handleTimerComplete()
+  }, [timeRemaining]);
 
   const buttonLabel = BUTTON_LABELS[status];
 
