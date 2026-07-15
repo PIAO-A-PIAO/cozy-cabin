@@ -9,25 +9,20 @@ export default function GuestRoute({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const auth = useContext(AuthContext);
-  const {user, isLoading} = auth;
+  const {user, isLoading} = useContext(AuthContext);
   const router = useRouter();
   useEffect(() => {
     if (!isLoading && user.id != "") {
       router.replace("/home")
     }
-  }, [user, isLoading])
+  }, [user, isLoading, router])
   
-  if (isLoading) {
+  if (isLoading || user.id != "") {
     return (
       <main className="flex min-h-screen items-center justify-center">
         <p>Loading...</p>
       </main>
       )
-  }
-
-  if (user.id != "") {
-    return null
   }
 
   return (

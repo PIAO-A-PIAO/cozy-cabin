@@ -18,7 +18,7 @@ export default function ProtectedRoute({
     }
   }, [user, isLoading])
   
-  if (isLoading) {
+  if (isLoading || user.id == "") {
     return (
       <main className="flex min-h-screen items-center justify-center">
         <p>Loading...</p>
