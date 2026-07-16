@@ -221,15 +221,12 @@ export class LetterService {
   async deleteDraft(userId: string, letterId: string) {
     const existingLetter = await this.prisma.letter.findUnique({
       where:{
-        id: letterId
+        id: letterId,
+        status: LetterStatus.DRAFT
       }
     })
     if (!existingLetter) {
       throw new NotFoundException("Letter doesn't exist")
-    }
-
-    if (existingLetter.status !== LetterStatus.DRAFT) {
-      throw new ForbiddenException("You cannot delete sent letters")
     }
 
     if (userId !== existingLetter.senderId) {
