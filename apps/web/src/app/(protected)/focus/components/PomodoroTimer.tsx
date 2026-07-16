@@ -128,10 +128,10 @@ function PomodoroTimer() {
     if (timeRemaining !== 0) return;
     const handleTimerComplete = () => {
         if (timerMode == "focus") {
-          toast.success("🍅 Focus session complete! Time for a short break.")
+          toast.success("🍅 Focus session complete! Time for a short break.", {duration: 10000})
           handleModeChange("break")
         } else {
-          toast.success("☕ Break finished! Ready to focus again?")
+          toast.success("☕ Break finished! Ready to focus again?", {duration: 10000})
           handleModeChange("focus")
         }
       }
