@@ -24,6 +24,7 @@ export default function LetterDetailPage() {
   const [letter, setLetter] = useState<Letter>();
   const [content, setContent] = useState("");
   const [recipientId, setRecipientId] = useState("");
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     const fetchLetter = async () => {
@@ -32,6 +33,7 @@ export default function LetterDetailPage() {
         setLetter(data);
         setContent(data.content);
         setRecipientId(data.recipientId || "");
+        setDirty(false);
       } catch (error) {
         console.error("Failed to fetch letter:", error);
       }
@@ -48,6 +50,7 @@ export default function LetterDetailPage() {
 
     const data = await getLetter(params.id);
     setLetter(data);
+    setDirty(false);
   };
 
   const handleSend = async () => {
@@ -65,7 +68,7 @@ export default function LetterDetailPage() {
   };
 
   const handleBack = async () => {
-    if (letter?.status === "DRAFT" && (recipientId.trim() || content.trim())) {
+    if (letter?.status === "DRAFT" && dirty) {
       const shouldSave = window.confirm("Save this draft before leaving?");
 
       if (shouldSave) {
@@ -104,12 +107,18 @@ export default function LetterDetailPage() {
               type="text"
               placeholder="Recipient ID"
               value={recipientId}
-              onChange={(event) => setRecipientId(event.target.value)}
+              onChange={(event) => {
+                setRecipientId(event.target.value);
+                setDirty(true);
+              }}
               className="w-full rounded border border-zinc-200 bg-transparent px-3 py-2 text-sm text-zinc-950 outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 dark:border-zinc-800 dark:text-zinc-50 dark:focus:border-zinc-600"
             />
             <textarea
               value={content}
-              onChange={(event) => setContent(event.target.value)}
+              onChange={(event) => {
+                setContent(event.target.value);
+                setDirty(true);
+              }}
               placeholder="Write a letter"
               className="min-h-72 w-full resize-none rounded border border-zinc-200 bg-transparent px-3 py-2 text-sm leading-6 text-zinc-950 outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 dark:border-zinc-800 dark:text-zinc-50 dark:focus:border-zinc-600"
             />
