@@ -13,6 +13,9 @@ export async function getLetter(id: string) {
 export async function createDraft(data: any) {
   const res = await fetch('/api/letters/draft', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(data),
   });
   return res.json()
@@ -21,6 +24,9 @@ export async function createDraft(data: any) {
 export async function updateDraft(id: string, data: any) {
   const res = await fetch(`/api/letters/draft/${id}`, {
     method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(data),
   });
   return res.json()
