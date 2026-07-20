@@ -1,121 +1,151 @@
+# README.md
+
 # Cozy Cabin
 
-Cozy Cabin is a cozy virtual study space designed to help people focus, relax, and connect with others.
+Cozy Cabin is a cozy virtual study space designed to help people focus, build sustainable study habits, and eventually connect with others through meaningful interactions.
 
-Inspired by the atmosphere of a quiet cabin, the project combines productivity, ambient music, and meaningful interactions into a single experience. Users can study with a built-in Pomodoro timer, enjoy relaxing environments, exchange letters with pen pals around the world, and discover small moments of comfort throughout the day.
+Inspired by the atmosphere of a quiet cabin, Cozy Cabin combines productivity tools, relaxing environments, and thoughtful social experiences into a single application. Rather than being just another Pomodoro timer, the long-term vision is to create a digital space where users can study, relax, exchange letters with pen pals, enjoy ambient music, play small games, and take care of a virtual companion.
 
-This repository contains the source code for the Cozy Cabin project, which is being built incrementally through a series of development sprints.
+The project is being developed incrementally through a series of development sprints, with every sprint delivering a complete, production-ready feature.
+
+---
 
 ## Live Demo
 
-Frontend:
+**Frontend**
+
 https://cozy-cabin-kappa.vercel.app/
 
-Backend:
+**Backend API**
+
 https://cozy-cabin-production.up.railway.app/
+
+---
+
+## Current Features
+
+### Authentication
+
+* User registration
+* User login
+* JWT-based authentication
+* Protected routes
+* Logout
+
+### Pomodoro Timer
+
+* 25-minute focus timer
+* 5-minute break timer
+* Start, pause, resume, and reset controls
+* Automatic transition between focus and break sessions
+* Timer persistence across page refreshes
+* Session completion notifications
+
+---
 
 ## Tech Stack
 
 ### Frontend
 
-- Next.js
-- React
-- TypeScript
+* Next.js
+* React
+* TypeScript
 
 ### Backend
 
-- NestJS
-- Prisma
-- PostgreSQL
-- JWT Authentication
+* NestJS
+* Prisma ORM
+* PostgreSQL
+* JWT Authentication
 
 ### Deployment
 
-- Vercel
-- Railway
+* Vercel
+* Railway
+
+---
 
 ## Project Structure
 
-```
+```text
 /
-├── frontend/      # Next.js application
-├── backend/       # NestJS API
-└── docs/          # Product documentation and ADRs
+├── apps/
+│   ├── web/        # Next.js frontend
+│   └── server/     # NestJS backend
+└── docs/           # Product documentation and ADRs
 ```
 
-## Getting Started
+---
 
-### Clone the repository
+## Development Progress
 
-```bash
-git clone ...
-```
+### Sprint 0 ✅ Project Foundation
 
-### Install dependencies
+* Repository setup
+* Project architecture
+* PostgreSQL database
+* Deployment with Railway and Vercel
+* Product documentation
+* Architecture Decision Records (ADRs)
 
-Frontend
+### Sprint 1 ✅ Authentication
 
-```bash
-cd frontend
-npm install
-```
+* User registration
+* User login
+* JWT authentication
+* Protected routes
+* Prisma integration
+* Frontend/backend communication
 
-Backend
+### Sprint 2 ✅ Pomodoro Timer
 
-```bash
-cd backend
-npm install
-```
+* Focus and break timers
+* Pause, resume, and reset controls
+* Automatic session transitions
+* Persistent timer state after refresh
+* Session completion notifications
+* Production deployment verification
 
-### Environment Variables
+---
 
-Create a `.env` file in the backend.
+## Roadmap
 
-```
-DATABASE_URL=...
-JWT_SECRET=...
-```
+### Milestone 1 — Core Productivity
 
-Create a `.env.local` file in the frontend.
+* Authentication
+* Pomodoro timer
+* Study session persistence
+* Dashboard
+* Study history
 
-```
-NEXT_PUBLIC_API_URL=...
-```
+### Milestone 2 — Cozy Experience
 
-### Run locally
+* Ambient music
+* Cozy study environments
+* User preferences
+* Daily goals
+* Custom timer settings
 
-Backend
+### Milestone 3 — Community
 
-```bash
-npm run start:dev
-```
+* Pen pal matching
+* Letters and inbox
+* User profiles
 
-Frontend
+### Milestone 4 — Relaxation
 
-```bash
-npm run dev
-```
+* Mini games
+* Virtual pet
+* Long-term progression system
 
-## Current Status
+### Milestone 5 — AI Features
 
-Sprint 0 ✅ Project foundation
+* AI productivity assistant
+* Personalized study insights
+* Smart recommendations
 
-- Project setup
-- Deployment
-- Documentation
-- Architecture decisions
+---
 
-Sprint 1 ✅ Authentication
+## Project Status
 
-- User registration
-- Login / Logout
-- JWT authentication
-- Protected routes
-- PostgreSQL with Prisma
-- Frontend / Backend integration
-
-Sprint 2 🚧 Coming next
-
-- Pomodoro Timer
-- User dashboard
-- Cozy study room
+Cozy Cabin is currently under active development. New features are introduced through incremental development sprints, with each sprint delivering a complete vertical slice that is deployed and validated before the next feature begins.

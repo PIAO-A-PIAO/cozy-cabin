@@ -3,6 +3,8 @@
 import { useContext, useEffect } from "react";
 import { AuthContext } from "../AuthProvider";
 import { useRouter } from "next/navigation";
+import TopBar from "./TopBar";
+import { Toaster } from "sonner";
 
 export default function ProtectedRoute({
   children,
@@ -31,8 +33,10 @@ export default function ProtectedRoute({
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
+      <TopBar />
       {children}
-    </>
+      <Toaster position="top-center" richColors/>
+    </div>
   );
 }
