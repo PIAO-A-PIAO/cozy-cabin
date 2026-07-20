@@ -1,19 +1,25 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Drafts from "./components/Drafts";
 import InboxList from "./components/InboxList";
 import SentList from "./components/SentList";
 
 export default function LettersPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"inbox" | "sent" | "drafts">("inbox");
+
+  const handleNewLetter = () => {
+    router.push("/letters/new");
+  };
 
   return (
     <main className="flex min-h-[calc(100vh-3.5rem)] justify-center bg-zinc-50 px-4 py-8 dark:bg-zinc-900">
       <section className="w-full max-w-2xl rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
         <div className="mb-6 flex items-center justify-between gap-3">
           <h1 className="text-xl font-medium text-zinc-950 dark:text-zinc-50">Letters</h1>
-          <button className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">
+          <button onClick={handleNewLetter} className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">
             New Letter
           </button>
         </div>
