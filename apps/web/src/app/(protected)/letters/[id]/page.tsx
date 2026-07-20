@@ -1,7 +1,6 @@
 "use client"
 
-import { getLetter, sendDraft, updateDraft } from "@/lib/api/letter";
-import Link from "next/link";
+import { deleteDraft, getLetter, sendDraft, updateDraft } from "@/lib/api/letter";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -56,6 +55,23 @@ export default function LetterDetailPage() {
     router.push("/letters");
   };
 
+  const handleDelete = async () => {
+    await deleteDraft(params.id);
+    router.push("/letters");
+  };
+
+  const handleBack = async () => {
+    if (letter?.status === "DRAFT" && (recipientId.trim() || content.trim())) {
+      const shouldSave = window.confirm("Save this draft before leaving?");
+
+      if (shouldSave) {
+        await handleSave();
+      }
+    }
+
+    router.push("/letters");
+  };
+
   if (!letter) {
     return (
       <main className="flex min-h-[calc(100vh-3.5rem)] justify-center bg-zinc-50 px-4 py-8 dark:bg-zinc-900">
@@ -70,9 +86,9 @@ export default function LetterDetailPage() {
     <main className="flex min-h-[calc(100vh-3.5rem)] justify-center bg-zinc-50 px-4 py-8 dark:bg-zinc-900">
       <section className="w-full max-w-2xl rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
         <div className="mb-6 flex items-center justify-between gap-3">
-          <Link href="/letters" className="text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50">
+          <button onClick={handleBack} className="text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50">
             Back
-          </Link>
+          </button>
           <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
             {letter.status === "DRAFT" ? "Draft" : "Letter"}
           </p>
@@ -94,6 +110,9 @@ export default function LetterDetailPage() {
               className="min-h-72 w-full resize-none rounded border border-zinc-200 bg-transparent px-3 py-2 text-sm leading-6 text-zinc-950 outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 dark:border-zinc-800 dark:text-zinc-50 dark:focus:border-zinc-600"
             />
             <div className="flex justify-end gap-3">
+              <button onClick={handleDelete} className="rounded border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800">
+                Delete
+              </button>
               <button onClick={handleSave} className="rounded border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800">
                 Save
               </button>
