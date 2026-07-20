@@ -2,12 +2,10 @@ type PreviewProps = {
   letter: {
     sender?: {
       id: string;
-      email: string;
       displayName: string;
     };
     recipient?: {
       id: string;
-      email: string;
       displayName: string;
     };
     preview: string;

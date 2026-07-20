@@ -8,12 +8,10 @@ type LetterPreview = {
   id: string;
   sender?: {
     id: string;
-    email: string;
     displayName: string;
   };
   recipient?: {
     id: string;
-    email: string;
     displayName: string;
   };
   preview: string;
