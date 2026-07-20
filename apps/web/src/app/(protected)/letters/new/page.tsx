@@ -1,11 +1,14 @@
 "use client"
 
 import { createDraft, sendDraft } from "@/lib/api/letter";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export default function NewLetterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromParam = searchParams.get("from");
+  const from = fromParam === "sent" || fromParam === "drafts" ? fromParam : "inbox";
   const [content, setContent] = useState("");
   const [recipientId, setRecipientId] = useState("");
 
@@ -15,7 +18,7 @@ export default function NewLetterPage() {
       recipientId: recipientId || undefined,
     });
 
-    router.replace(`/letters/${draft.id}`);
+    router.replace(`/letters/${draft.id}?from=drafts`);
   };
 
   const handleSend = async () => {
@@ -25,7 +28,7 @@ export default function NewLetterPage() {
     });
 
     await sendDraft(draft.id);
-    router.push("/letters");
+    router.push("/letters?tab=sent");
   };
 
   const handleBack = async () => {
@@ -33,12 +36,16 @@ export default function NewLetterPage() {
       const shouldSave = window.confirm("Save this draft before leaving?");
 
       if (shouldSave) {
-        await handleSave();
+        await createDraft({
+          content,
+          recipientId: recipientId || undefined,
+        });
+        router.push("/letters?tab=drafts");
         return;
       }
     }
 
-    router.push("/letters");
+    router.push(`/letters?tab=${from}`);
   };
 
   return (

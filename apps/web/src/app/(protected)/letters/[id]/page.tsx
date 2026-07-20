@@ -1,7 +1,7 @@
 "use client"
 
 import { deleteDraft, getLetter, sendDraft, updateDraft } from "@/lib/api/letter";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type Letter = {
@@ -17,6 +17,10 @@ type Letter = {
 export default function LetterDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromParam = searchParams.get("from");
+  const from = fromParam === "sent" || fromParam === "drafts" ? fromParam : "inbox";
+  const backPath = `/letters?tab=${from}`;
   const [letter, setLetter] = useState<Letter>();
   const [content, setContent] = useState("");
   const [recipientId, setRecipientId] = useState("");
@@ -52,12 +56,12 @@ export default function LetterDetailPage() {
       recipientId: recipientId || undefined,
     });
     await sendDraft(params.id);
-    router.push("/letters");
+    router.push("/letters?tab=sent");
   };
 
   const handleDelete = async () => {
     await deleteDraft(params.id);
-    router.push("/letters");
+    router.push("/letters?tab=drafts");
   };
 
   const handleBack = async () => {
@@ -69,7 +73,7 @@ export default function LetterDetailPage() {
       }
     }
 
-    router.push("/letters");
+    router.push(backPath);
   };
 
   if (!letter) {

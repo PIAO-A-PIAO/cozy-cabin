@@ -47,7 +47,7 @@ export default function Drafts() {
         ) : (
           <div className="space-y-2">
             {letters.map((letter) => (
-              <Preview key={letter.id} letter={letter} />
+              <Preview key={letter.id} from="drafts" letter={letter} />
             ))}
           </div>
         )}

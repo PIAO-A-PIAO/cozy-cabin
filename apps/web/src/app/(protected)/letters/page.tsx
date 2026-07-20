@@ -1,17 +1,18 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Drafts from "./components/Drafts";
 import InboxList from "./components/InboxList";
 import SentList from "./components/SentList";
 
 export default function LettersPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"inbox" | "sent" | "drafts">("inbox");
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const activeTab = tabParam === "sent" || tabParam === "drafts" ? tabParam : "inbox";
 
   const handleNewLetter = () => {
-    router.push("/letters/new");
+    router.push(`/letters/new?from=${activeTab}`);
   };
 
   return (
@@ -29,7 +30,7 @@ export default function LettersPage() {
             <button
               key={tab}
               disabled={activeTab === tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => router.push(`/letters?tab=${tab}`)}
               className={`rounded px-3 py-1.5 text-sm font-medium capitalize transition-colors ${
                 activeTab === tab
                   ? "bg-white text-zinc-950 shadow-sm dark:bg-zinc-800 dark:text-zinc-50"

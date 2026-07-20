@@ -48,7 +48,7 @@ export default function InboxList() {
   return (
     <div className="space-y-2">
       {letters.map((letter) => (
-        <Preview key={letter.id} letter={letter} />
+        <Preview key={letter.id} from="inbox" letter={letter} />
       ))}
     </div>
   );

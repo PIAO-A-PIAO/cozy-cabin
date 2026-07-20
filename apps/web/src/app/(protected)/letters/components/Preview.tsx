@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 type PreviewProps = {
+  from: "inbox" | "sent" | "drafts";
   letter: {
     id: string;
     sender?: {
@@ -15,9 +16,9 @@ type PreviewProps = {
   };
 };
 
-export default function Preview({ letter }: PreviewProps) {
+export default function Preview({ from, letter }: PreviewProps) {
   return (
-    <Link href={`/letters/${letter.id}`} className="block rounded border border-zinc-200 px-4 py-3 text-left transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900">
+    <Link href={`/letters/${letter.id}?from=${from}`} className="block rounded border border-zinc-200 px-4 py-3 text-left transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900">
       <div className="mb-2 grid gap-2 text-xs text-zinc-500 dark:text-zinc-400 sm:grid-cols-2">
         <p className="truncate">
           From: {letter.sender?.displayName || letter.sender?.id || "Unknown"}
