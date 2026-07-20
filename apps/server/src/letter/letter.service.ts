@@ -13,13 +13,15 @@ const letterListSelect = {
     sender: {
       select: {
         id: true,
-        email: true,
+        // email: true,
+        displayName: true,
       },
     },
     recipient: {
       select: {
         id: true,
-        email: true,
+        // email: true,
+        displayName: true,
       },
     },
   } satisfies Prisma.LetterSelect;
