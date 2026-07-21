@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from "class-validator";
+import { IsInt, IsOptional, IsString, Max, Min } from "class-validator";
 
 export class CreateDraftDto {
     @IsString()
@@ -6,7 +6,21 @@ export class CreateDraftDto {
 
     @IsString()
     @IsOptional()
-    readonly recipientId?: string;
+    readonly senderName?: string;
+
+    @IsString()
+    @IsOptional()
+    readonly recipientName?: string;
+
+    @IsString()
+    @IsOptional()
+    readonly streetName?: string;
+
+    @IsInt()
+    @Min(1)
+    @Max(999)
+    @IsOptional()
+    readonly houseNumber?: number;
 }
 
 export class EditDraftDto {
@@ -16,5 +30,23 @@ export class EditDraftDto {
 
     @IsString()
     @IsOptional()
+    readonly senderName?: string;
+
+    @IsString()
+    @IsOptional()
     readonly recipientId?: string;
+
+    @IsString()
+    @IsOptional()
+    readonly recipientName?: string;
+
+    @IsString()
+    @IsOptional()
+    readonly streetName?: string;
+
+    @IsInt()
+    @Min(1)
+    @Max(999)
+    @IsOptional()
+    readonly houseNumber?: number;
 }

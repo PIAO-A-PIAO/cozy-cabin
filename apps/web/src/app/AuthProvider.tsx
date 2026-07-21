@@ -7,6 +7,8 @@ type User = {
         id: string;
         email: string;
         displayName: string;
+        streetName?: string;
+        houseNumber?: number;
     };
 
 type AuthContextValue = {
@@ -19,7 +21,9 @@ type AuthContextValue = {
 const defaultUser = {
         id: "",
         email: "",
-        displayName: "User"
+        displayName: "User",
+        streetName: "",
+        houseNumber: undefined,
     }
 
 export const AuthContext = createContext<AuthContextValue>({
@@ -39,7 +43,7 @@ function AuthProvider({children}: {children: ReactNode}) {
         const restoreSession = async () => {
             try {
                 const res = await me();
-                setUser({...res, id: res.sub})
+                setUser({...res, id: res.id || res.sub})
             } catch {
                 resetUser()
             } finally {

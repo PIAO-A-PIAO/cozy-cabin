@@ -1,11 +1,13 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateDraftDto, EditDraftDto } from './letter.dto';
-import { LetterStatus, Prisma } from '@prisma/client';
+import { LetterStatus, Prisma, User } from '@prisma/client';
 
 const letterListSelect = {
     id: true,
     content: true,
+    recipientName: true,
+    senderName: true,
     status: true,
     createdAt: true,
     updatedAt: true,
@@ -15,6 +17,8 @@ const letterListSelect = {
         id: true,
         // email: true,
         displayName: true,
+        streetName: true,
+        houseNumber: true,
       },
     },
     recipient: {
@@ -22,6 +26,8 @@ const letterListSelect = {
         id: true,
         // email: true,
         displayName: true,
+        streetName: true,
+        houseNumber: true,
       },
     },
   } satisfies Prisma.LetterSelect;
@@ -34,8 +40,44 @@ type LetterListItem = Prisma.LetterGetPayload<{
 export class LetterService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private async findRecipient(
+    dto: Pick<
+      CreateDraftDto,
+      'recipientName' | 'streetName' | 'houseNumber'
+    >,
+  ): Promise<User | null> {
+    const { recipientName, streetName, houseNumber } = dto;
+
+    const hasRecipientAddress =
+      !!recipientName || !!streetName || houseNumber !== undefined;
+
+    if (!hasRecipientAddress) {
+      return null;
+    }
+
+    if (!recipientName || !streetName || houseNumber === undefined) {
+      throw new BadRequestException(
+        'Recipient name, street name, and house number are required',
+      );
+    }
+
+    const recipient = await this.prisma.user.findUnique({
+      where: {
+        streetName_houseNumber: {
+          streetName,
+          houseNumber,
+        },
+      },
+    });
+
+    if (!recipient) {
+      throw new NotFoundException('Recipient not found');
+    }
+
+    return recipient;
+  }
+
   async createDraft(dto: CreateDraftDto, userId: string) {
-    const { recipientId } = dto;
     const sender = await this.prisma.user.findUnique({
       where: {
         id: userId,
@@ -46,50 +88,21 @@ export class LetterService {
       throw new UnauthorizedException('Sender not found');
     }
 
-    let recipientName = '';
-
-    if (recipientId) {
-      const recipient = await this.prisma.user.findUnique({
-        where: {
-          id: recipientId,
-        },
-      });
-
-      if (!recipient) {
-        throw new NotFoundException('Recipient not found');
-      }
-
-      recipientName = recipient.displayName;
-    }
+    const recipient = await this.findRecipient(dto);
 
     return this.prisma.letter.create({
       data: {
         content: dto.content,
-        recipientId,
+        recipientId: recipient?.id,
         senderId: userId,
-        senderName: sender.displayName,
-        recipientName,
+        senderName: dto.senderName?.trim() || sender.displayName,
+        recipientName: recipient?.displayName ?? '',
       },
     });
   }
 
   async editDraft(dto: EditDraftDto, letterId: string, userId: string) {
-    const { recipientId } = dto;
-    let recipientName: string | undefined;
-
-    if (recipientId) {
-      const recipient = await this.prisma.user.findUnique({
-        where: {
-          id: recipientId,
-        },
-      });
-
-      if (!recipient) {
-        throw new NotFoundException('Recipient not found');
-      }
-
-      recipientName = recipient.displayName;
-    }
+    const recipient = await this.findRecipient(dto);
 
     const existingDraft = await this.prisma.letter.findUnique({
       where: {
@@ -114,8 +127,14 @@ export class LetterService {
         id: letterId
       },
       data: {
-        ...dto,
-        ...(recipientName !== undefined ? { recipientName } : {}),
+        content: dto.content,
+        senderName: dto.senderName?.trim() || undefined,
+        ...(recipient
+          ? {
+              recipientId: recipient.id,
+              recipientName: recipient.displayName,
+            }
+          : {}),
       }
     })
   }
@@ -228,7 +247,25 @@ export class LetterService {
     const existingLetter = await this.prisma.letter.findUnique({
       where:{
         id: letterId
-      }
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            displayName: true,
+            streetName: true,
+            houseNumber: true,
+          },
+        },
+        recipient: {
+          select: {
+            id: true,
+            displayName: true,
+            streetName: true,
+            houseNumber: true,
+          },
+        },
+      },
     })
     if (!existingLetter) {
       throw new NotFoundException("Letter doesn't exist")

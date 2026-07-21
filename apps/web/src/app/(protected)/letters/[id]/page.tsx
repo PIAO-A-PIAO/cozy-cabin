@@ -1,14 +1,27 @@
 "use client"
 
+import { AuthContext } from "@/app/AuthProvider";
+import DraftLetterForm, { DraftLetterPayload } from "@/app/(protected)/letters/components/DraftLetterForm";
 import { deleteDraft, getLetter, sendDraft, updateDraft } from "@/lib/api/letter";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
+
+type LetterUser = {
+  id: string;
+  displayName: string;
+  streetName?: string;
+  houseNumber?: number;
+};
 
 type Letter = {
   id: string;
   content: string;
   senderId: string;
+  senderName?: string;
+  sender?: LetterUser;
   recipientId?: string;
+  recipientName?: string;
+  recipient?: LetterUser;
   status: "DRAFT" | "SENT";
   sentAt?: string;
   updatedAt: string;
@@ -17,23 +30,18 @@ type Letter = {
 export default function LetterDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useContext(AuthContext);
   const searchParams = useSearchParams();
   const fromParam = searchParams.get("from");
   const from = fromParam === "sent" || fromParam === "drafts" ? fromParam : "inbox";
   const backPath = `/letters?tab=${from}`;
   const [letter, setLetter] = useState<Letter>();
-  const [content, setContent] = useState("");
-  const [recipientId, setRecipientId] = useState("");
-  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     const fetchLetter = async () => {
       try {
         const data = await getLetter(params.id);
         setLetter(data);
-        setContent(data.content);
-        setRecipientId(data.recipientId || "");
-        setDirty(false);
       } catch (error) {
         console.error("Failed to fetch letter:", error);
       }
@@ -42,24 +50,33 @@ export default function LetterDetailPage() {
     fetchLetter();
   }, [params.id]);
 
-  const handleSave = async () => {
-    await updateDraft(params.id, {
-      content,
-      recipientId: recipientId || undefined,
-    });
+  const handleSave = async (payload: DraftLetterPayload) => {
+    const updatedLetter = await updateDraft(params.id, payload);
+
+    if (!updatedLetter.id) {
+      return { ok: false, message: updatedLetter.message || "Could not save draft" };
+    }
 
     const data = await getLetter(params.id);
     setLetter(data);
-    setDirty(false);
+    return { ok: true };
   };
 
-  const handleSend = async () => {
-    await updateDraft(params.id, {
-      content,
-      recipientId: recipientId || undefined,
-    });
-    await sendDraft(params.id);
+  const handleSend = async (payload: DraftLetterPayload) => {
+    const updatedLetter = await updateDraft(params.id, payload);
+
+    if (!updatedLetter.id) {
+      return { ok: false, message: updatedLetter.message || "Could not save draft" };
+    }
+
+    const sentLetter = await sendDraft(params.id);
+
+    if (!sentLetter.id) {
+      return { ok: false, message: sentLetter.message || "Could not send letter" };
+    }
+
     router.push("/letters?tab=sent");
+    return { ok: true };
   };
 
   const handleDelete = async () => {
@@ -68,14 +85,6 @@ export default function LetterDetailPage() {
   };
 
   const handleBack = async () => {
-    if (letter?.status === "DRAFT" && dirty) {
-      const shouldSave = window.confirm("Save this draft before leaving?");
-
-      if (shouldSave) {
-        await handleSave();
-      }
-    }
-
     router.push(backPath);
   };
 
@@ -89,64 +98,64 @@ export default function LetterDetailPage() {
     );
   }
 
+  const formatAddress = (letterUser?: LetterUser) => {
+    if (!letterUser?.streetName || !letterUser.houseNumber) {
+      return "Unknown address";
+    }
+
+    return `${letterUser.houseNumber} ${letterUser.streetName}`;
+  };
+
+  const isOwnSentLetter =
+    from === "sent" || (user.id && user.id === letter.senderId);
+  const otherParty = isOwnSentLetter ? letter.recipient : letter.sender;
+  const ownParty = isOwnSentLetter ? letter.sender : letter.recipient;
+  const otherName = isOwnSentLetter
+    ? letter.recipientName || otherParty?.displayName || "Unknown"
+    : letter.senderName || otherParty?.displayName || "Unknown";
+  const ownName = isOwnSentLetter
+    ? letter.senderName || ownParty?.displayName || "Unknown"
+    : letter.recipientName || ownParty?.displayName || "Unknown";
+
   return (
     <main className="flex min-h-[calc(100vh-3.5rem)] justify-center bg-zinc-50 px-4 py-8 dark:bg-zinc-900">
-      <section className="w-full max-w-2xl rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="mb-6 flex items-center justify-between gap-3">
-          <button onClick={handleBack} className="text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50">
-            Back
-          </button>
-          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-            {letter.status === "DRAFT" ? "Draft" : "Letter"}
-          </p>
-        </div>
-
-        {letter.status === "DRAFT" ? (
-          <div className="space-y-4">
-            <input
-              type="text"
-              placeholder="Recipient ID"
-              value={recipientId}
-              onChange={(event) => {
-                setRecipientId(event.target.value);
-                setDirty(true);
-              }}
-              className="w-full rounded border border-zinc-200 bg-transparent px-3 py-2 text-sm text-zinc-950 outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 dark:border-zinc-800 dark:text-zinc-50 dark:focus:border-zinc-600"
-            />
-            <textarea
-              value={content}
-              onChange={(event) => {
-                setContent(event.target.value);
-                setDirty(true);
-              }}
-              placeholder="Write a letter"
-              className="min-h-72 w-full resize-none rounded border border-zinc-200 bg-transparent px-3 py-2 text-sm leading-6 text-zinc-950 outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 dark:border-zinc-800 dark:text-zinc-50 dark:focus:border-zinc-600"
-            />
-            <div className="flex justify-end gap-3">
-              <button onClick={handleDelete} className="rounded border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800">
-                Delete
-              </button>
-              <button onClick={handleSave} className="rounded border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800">
-                Save
-              </button>
-              <button onClick={handleSend} className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">
-                Send
-              </button>
-            </div>
+      {letter.status === "DRAFT" ? (
+        <DraftLetterForm
+          title="Draft"
+          backPath={backPath}
+          initialValues={{
+            content: letter.content,
+            senderName: letter.senderName,
+            recipientName: letter.recipientName,
+            streetName: letter.recipient?.streetName,
+            houseNumber: letter.recipient?.houseNumber,
+          }}
+          onSave={handleSave}
+          onSend={handleSend}
+          onDelete={handleDelete}
+        />
+      ) : (
+        <section className="w-full max-w-2xl rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <button onClick={handleBack} className="text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50">
+              Back
+            </button>
+            <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+              Letter
+            </p>
           </div>
-        ) : (
           <div>
             <div className="mb-6 space-y-1 border-b border-zinc-200 pb-4 text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-              <p>From: {letter.senderId}</p>
-              <p>To: {letter.recipientId || "Unknown"}</p>
+              <p>Other: {otherName} · {formatAddress(otherParty)}</p>
+              <p>You: {ownName} · {formatAddress(ownParty)}</p>
               <p>Date: {letter.sentAt ? new Date(letter.sentAt).toLocaleString() : ""}</p>
             </div>
             <p className="whitespace-pre-wrap text-sm leading-7 text-zinc-950 dark:text-zinc-50">
               {letter.content}
             </p>
           </div>
-        )}
-      </section>
+        </section>
+      )}
     </main>
   );
 }

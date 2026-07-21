@@ -4,6 +4,8 @@ type AuthUser = {
     id: string;
     email: string;
     displayName: string;
+    streetName?: string;
+    houseNumber?: number;
 };
 
 type LoginResult = {

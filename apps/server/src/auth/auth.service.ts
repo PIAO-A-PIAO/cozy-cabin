@@ -69,10 +69,12 @@ export class AuthService {
             throw new UnauthorizedException()
         }
 
-        const payload: {sub: string, email: string, displayName: string} = {
+        const payload: {sub: string, email: string, displayName: string, streetName: string, houseNumber: number} = {
             sub: existingUser.id,
             email,
-            displayName: existingUser.displayName
+            displayName: existingUser.displayName,
+            streetName: existingUser.streetName,
+            houseNumber: existingUser.houseNumber
         }
 
         const accessToken = await this.jwtService.signAsync(payload)
@@ -81,8 +83,10 @@ export class AuthService {
             user: {
                 id: existingUser.id,
                 email: existingUser.email,
-                displayName: existingUser.displayName
+                displayName: existingUser.displayName,
+                streetName: existingUser.streetName,
+                houseNumber: existingUser.houseNumber
             }
         }
-    } 
+    }
 }
