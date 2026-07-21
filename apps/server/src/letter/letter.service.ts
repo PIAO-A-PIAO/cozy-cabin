@@ -36,6 +36,17 @@ export class LetterService {
 
   async createDraft(dto: CreateDraftDto, userId: string) {
     const { recipientId } = dto;
+    const sender = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!sender) {
+      throw new UnauthorizedException('Sender not found');
+    }
+
+    let recipientName = '';
 
     if (recipientId) {
       const recipient = await this.prisma.user.findUnique({
@@ -47,18 +58,25 @@ export class LetterService {
       if (!recipient) {
         throw new NotFoundException('Recipient not found');
       }
+
+      recipientName = recipient.displayName;
     }
 
     return this.prisma.letter.create({
       data: {
-        ...dto,
+        content: dto.content,
+        recipientId,
         senderId: userId,
+        senderName: sender.displayName,
+        recipientName,
       },
     });
   }
 
   async editDraft(dto: EditDraftDto, letterId: string, userId: string) {
     const { recipientId } = dto;
+    let recipientName: string | undefined;
+
     if (recipientId) {
       const recipient = await this.prisma.user.findUnique({
         where: {
@@ -69,6 +87,8 @@ export class LetterService {
       if (!recipient) {
         throw new NotFoundException('Recipient not found');
       }
+
+      recipientName = recipient.displayName;
     }
 
     const existingDraft = await this.prisma.letter.findUnique({
@@ -94,7 +114,8 @@ export class LetterService {
         id: letterId
       },
       data: {
-        ...dto
+        ...dto,
+        ...(recipientName !== undefined ? { recipientName } : {}),
       }
     })
   }

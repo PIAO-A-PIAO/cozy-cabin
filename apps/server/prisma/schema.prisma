@@ -21,11 +21,15 @@ model User {
 
   displayName  String
 
+  streetName   String
+  houseNumber  Int
+
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
   sentLetters  Letter[]      @relation("SentLetters")
   receivedLetters Letter[]   @relation("ReceivedLetters")
+  @@unique([streetName, houseNumber])
 }
 
 enum LetterStatus {
@@ -34,15 +38,18 @@ enum LetterStatus {
 }
 
 model Letter {
-  id          String         @id @default(cuid())
-  content     String
-  senderId    String
-  recipientId String?
-  status      LetterStatus   @default(DRAFT)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  sentAt      DateTime?
+  id            String         @id @default(cuid())
+  content       String
+  senderId      String
+  recipientId   String?
 
-  sender      User           @relation("SentLetters", fields: [senderId], references: [id])
-  recipient   User?          @relation("ReceivedLetters", fields: [recipientId], references: [id])
+  senderName    String?
+  recipientName String?
+  status        LetterStatus   @default(DRAFT)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  sentAt        DateTime?
+
+  sender        User           @relation("SentLetters", fields: [senderId], references: [id])
+  recipient     User?          @relation("ReceivedLetters", fields: [recipientId], references: [id])
 }

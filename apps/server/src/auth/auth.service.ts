@@ -4,6 +4,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt'
 import { User } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
+import { AVAILABLE_STREETS } from 'src/config/streets';
 
 @Injectable()
 export class AuthService {
@@ -12,7 +13,7 @@ export class AuthService {
         private readonly jwtService: JwtService
     ) {}
 
-    async register (dto: RegisterDto): Promise<{id: string, email: string, displayName: string}> {
+    async register (dto: RegisterDto): Promise<{id: string, email: string, displayName: string, streetName: string, houseNumber: number}> {
         const {displayName, email, password} = dto
         const existingUser: User | null = await this.prisma.user.findUnique({
             where: {email}
@@ -22,14 +23,36 @@ export class AuthService {
         }
 
         const passwordHash: string = await bcrypt.hash(password, 10)
+        const streetName = AVAILABLE_STREETS[Math.floor(Math.random() * AVAILABLE_STREETS.length)]
+
+        const usersOnStreet = await this.prisma.user.findMany({
+            where: { streetName },
+            select: { houseNumber: true },
+            orderBy: { houseNumber: "asc" },
+        });
+
+        console.log(usersOnStreet)
+        const usedNumbers = new Set(
+            usersOnStreet.map((user) => user.houseNumber),
+        );
+
+        let houseNumber = 0;
+        for (let number = 1; number <= 999; number++) {
+            if (!usedNumbers.has(number)) {
+                houseNumber = number
+            }
+        }
+
         const newUser: User | null = await this.prisma.user.create({
             data: {
                 email,
                 displayName,
-                passwordHash
+                passwordHash,
+                streetName,
+                houseNumber
             }
         })
-        return {id: newUser.id, email, displayName}
+        return {id: newUser.id, email, displayName, streetName, houseNumber}
     }
 
     async login(dto: LoginDto) {
