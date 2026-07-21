@@ -28,10 +28,9 @@ export class AuthService {
         const usersOnStreet = await this.prisma.user.findMany({
             where: { streetName },
             select: { houseNumber: true },
-            orderBy: { houseNumber: "asc" },
+            orderBy: { houseNumber: "desc" },
         });
 
-        console.log(usersOnStreet)
         const usedNumbers = new Set(
             usersOnStreet.map((user) => user.houseNumber),
         );
