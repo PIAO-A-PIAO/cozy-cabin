@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type StatusType = "idle" | "running" | "paused";
@@ -19,6 +21,7 @@ const STORAGE_KEYS = {
   endTime: "local_timer_endTime",
   status: "local_timer_status",
   mode: "local_timer_mode",
+  sessionStartTime: "local_timer_sessionStartTime",
 };
 
 const BUTTON_LABELS: Record<StatusType, string> = {
@@ -27,15 +30,36 @@ const BUTTON_LABELS: Record<StatusType, string> = {
   paused: "Resume",
 };
 
+async function createFocusSession(startTime: string) {
+  const res = await fetch("/api/focus-sessions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      startTime,
+      durationMinutes: 25,
+      endTime: new Date().toISOString(),
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to create focus session");
+  }
+}
+
 function PomodoroTimer() {
   const [timerMode, setTimerMode] = useState<TimerModeType>("focus");
   const [timeRemaining, setTimeRemaining] = useState(MODE_SECONDS.focus);
   const [status, setStatus] = useState<StatusType>("idle");
+  const sessionRecorded = useRef(false);
+  const sessionStartTime = useRef<string | null>(null);
 
   const clearSavedTimer = () => {
     localStorage.removeItem(STORAGE_KEYS.timeRemaining);
     localStorage.removeItem(STORAGE_KEYS.endTime);
     localStorage.removeItem(STORAGE_KEYS.status);
+    localStorage.removeItem(STORAGE_KEYS.sessionStartTime);
   };
 
   const handleModeChange = (mode: TimerModeType) => {
@@ -43,6 +67,8 @@ function PomodoroTimer() {
     setTimerMode(mode);
     setTimeRemaining(MODE_SECONDS[mode]);
     setStatus("idle");
+    sessionRecorded.current = false;
+    sessionStartTime.current = null;
     clearSavedTimer();
   };
 
@@ -58,6 +84,13 @@ function PomodoroTimer() {
   };
 
   const handleStart = () => {
+    const startTime = sessionStartTime.current ?? new Date().toISOString();
+
+    if (timerMode === "focus" && !sessionStartTime.current) {
+      sessionStartTime.current = startTime;
+      localStorage.setItem(STORAGE_KEYS.sessionStartTime, startTime);
+    }
+
     localStorage.setItem(STORAGE_KEYS.endTime, String(Date.now() + timeRemaining * 1000));
     localStorage.setItem(STORAGE_KEYS.status, "running");
     setStatus("running");
@@ -71,6 +104,8 @@ function PomodoroTimer() {
 
   const handleReset = () => {
     clearSavedTimer();
+    sessionRecorded.current = false;
+    sessionStartTime.current = null;
     setTimeRemaining(MODE_SECONDS[timerMode]);
     setStatus("idle");
   };
@@ -88,16 +123,22 @@ function PomodoroTimer() {
         setTimerMode(storedTimerMode);
         setTimeRemaining(MODE_SECONDS[storedTimerMode]);
       }
+
+      const storedsessionStartTime = localStorage.getItem(STORAGE_KEYS.sessionStartTime);
+      if (storedsessionStartTime) {
+        sessionStartTime.current = storedsessionStartTime;
+      }
+
       const timerStatus = localStorage.getItem(STORAGE_KEYS.status) as StatusType | null;
 
-      if (timerStatus == "paused") {
+      if (timerStatus === "paused") {
         setTimeRemaining(Number(localStorage.getItem(STORAGE_KEYS.timeRemaining)));
         setStatus(timerStatus);
         return;
       }
 
       const endTime = localStorage.getItem(STORAGE_KEYS.endTime);
-      if (endTime && timerStatus == "running") {
+      if (endTime && timerStatus === "running") {
         const timeDifference = Number(endTime) - Date.now();
         const toNumber = Math.max(0, Math.floor(timeDifference / 1000));
         setTimeRemaining(toNumber);
@@ -111,7 +152,7 @@ function PomodoroTimer() {
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
-    if (status == "running") {
+    if (status === "running") {
       intervalId = setInterval(() => {
         setTimeRemaining((prev) => prev - 1);
       }, 1000);
@@ -126,17 +167,33 @@ function PomodoroTimer() {
 
   useEffect(() => {
     if (timeRemaining !== 0) return;
-    const handleTimerComplete = () => {
-        if (timerMode == "focus") {
-          toast.success("🍅 Focus session complete! Time for a short break.", {duration: 10000})
-          handleModeChange("break")
-        } else {
+
+    const handleTimerComplete = async () => {
+      if (timerMode === "focus") {
+        toast.success("🍅 Focus session complete! Time for a short break.", {duration: 10000})
+        handleModeChange("break")
+
+        if (!sessionRecorded.current) {
+          sessionRecorded.current = true;
+
+          const startTime =
+            sessionStartTime.current ??
+            new Date(Date.now() - MODE_SECONDS.focus * 1000).toISOString();
+
+          try {
+            await createFocusSession(startTime);
+          } catch {
+            toast.error("Failed to save focus session.");
+          }
+        }
+      } else {
           toast.success("☕ Break finished! Ready to focus again?", {duration: 10000})
           handleModeChange("focus")
-        }
       }
+    }
+
     handleTimerComplete()
-  }, [timeRemaining]);
+  }, [timeRemaining, timerMode]);
 
   const buttonLabel = BUTTON_LABELS[status];
 
@@ -146,10 +203,10 @@ function PomodoroTimer() {
         {(["focus", "break"] as TimerModeType[]).map((mode) => (
           <button
             key={mode}
-            disabled={mode == timerMode}
+            disabled={mode === timerMode}
             onClick={() => handleModeChange(mode)}
             className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
-              timerMode == mode
+              timerMode === mode
                 ? "bg-white text-zinc-950 shadow-sm dark:bg-zinc-800 dark:text-zinc-50"
                 : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
             }`}
@@ -173,7 +230,7 @@ function PomodoroTimer() {
           {buttonLabel}
         </button>
         <button
-          disabled={status == "idle"}
+          disabled={status === "idle"}
           onClick={handleReset}
           className="rounded border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
         >
