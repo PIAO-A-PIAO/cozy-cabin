@@ -22,6 +22,39 @@ https://cozy-cabin-production.up.railway.app/
 
 ---
 
+## Local Database Setup
+
+This repo now includes a local Postgres container for development.
+
+1. Start Postgres:
+
+```bash
+docker compose up -d db
+```
+
+2. Run Prisma migrations from the server app:
+
+```bash
+cd apps/server
+npx prisma migrate dev
+```
+
+3. Start the backend:
+
+```bash
+npm run start:dev
+```
+
+The server reads its database connection from `apps/server/.env`:
+
+```bash
+DATABASE_URL=postgresql://cozy:cozy_password@localhost:3002/cozy_cabin?schema=public
+```
+
+If port `3002` is already taken on your machine, change the left side of the port mapping in `docker-compose.yml` and update `DATABASE_URL` to match.
+
+---
+
 ## Current Features
 
 ### Authentication
