@@ -162,6 +162,10 @@ export class LetterService {
       throw new BadRequestException("Recipient is required")
     }
 
+    if (existingDraft.recipientId == userId) {
+      throw new BadRequestException("Cannot send letter to oneself.")
+    }
+
     const recipient = await this.prisma.user.findUnique({
       where: {
         id: existingDraft.recipientId
