@@ -14,13 +14,42 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
+  id           String        @id @default(cuid())
 
-  email        String   @unique
+  email        String        @unique
   passwordHash String
 
   displayName  String
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  streetName   String
+  houseNumber  Int
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  sentLetters  Letter[]      @relation("SentLetters")
+  receivedLetters Letter[]   @relation("ReceivedLetters")
+  @@unique([streetName, houseNumber])
+}
+
+enum LetterStatus {
+  DRAFT
+  SENT
+}
+
+model Letter {
+  id            String         @id @default(cuid())
+  content       String
+  senderId      String
+  recipientId   String?
+
+  senderName    String?
+  recipientName String?
+  status        LetterStatus   @default(DRAFT)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  sentAt        DateTime?
+
+  sender        User           @relation("SentLetters", fields: [senderId], references: [id])
+  recipient     User?          @relation("ReceivedLetters", fields: [recipientId], references: [id])
 }
