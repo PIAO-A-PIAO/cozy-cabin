@@ -29,6 +29,7 @@ model User {
 
   sentLetters  Letter[]      @relation("SentLetters")
   receivedLetters Letter[]   @relation("ReceivedLetters")
+  focusSessions FocusSession[]
   @@unique([streetName, houseNumber])
 }
 
@@ -52,4 +53,17 @@ model Letter {
 
   sender        User           @relation("SentLetters", fields: [senderId], references: [id])
   recipient     User?          @relation("ReceivedLetters", fields: [recipientId], references: [id])
+}
+
+model FocusSession {
+  id                    String   @id @default(cuid())
+  userId                String
+  plannedDurationMinutes Int
+  actualDurationMinutes  Int
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user                  User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
 }
