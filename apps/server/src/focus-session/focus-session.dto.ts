@@ -1,14 +1,12 @@
-import { IsISO8601, IsInt, IsOptional, Min } from 'class-validator';
+import { IsInt, IsOptional, Min } from 'class-validator';
 
 export class CreateFocusSessionDto {
-  @IsISO8601()
-  readonly startTime!: string;
-
   @IsInt()
   @Min(1)
-  readonly durationMinutes!: number;
+  readonly plannedDurationMinutes!: number;
 
-  @IsISO8601()
+  @IsInt()
+  @Min(0)
   @IsOptional()
-  readonly endTime?: string;
+  readonly actualDurationMinutes?: number;
 }
