@@ -1,5 +1,24 @@
 # Cozy Cabin Backlog
 
+## Pomodoro
+
+### Focus Session History Pagination
+
+Status: Planned
+
+Description:
+- Load older focus-session records as the user scrolls to the end of the history list.
+- Use cursor-based pagination ordered by `createdAt` so the list stays fast as history grows.
+- Keep the initial load small and append older records in batches.
+
+Potential design:
+- `GET /api/focus-sessions?limit=20`
+- `GET /api/focus-sessions?limit=20&before=<cursor>`
+- Frontend scroll sentinel or `IntersectionObserver` to trigger loading more
+
+Priority:
+Next sprint or later
+
 ## Letters
 
 ### Delivery Simulation
