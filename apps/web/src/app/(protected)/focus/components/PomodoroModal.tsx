@@ -101,7 +101,7 @@ export default function PomodoroModal() {
             ? "fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6 backdrop-blur-sm"
             : "hidden"
         }
-      >
+        >
         <div className="relative flex h-[min(80vh,44rem)] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-6">
           <button
             type="button"
@@ -111,12 +111,12 @@ export default function PomodoroModal() {
             Close
           </button>
 
-          <div className="relative mt-8 flex-1 min-h-0">
+          <div className="mt-8 flex-1 min-h-0">
             <div
               className={
                 viewMode === "history"
-                  ? "invisible h-full pointer-events-none select-none"
-                  : ""
+                  ? "hidden h-full"
+                  : "h-full min-h-0"
               }
             >
               <PomodoroSettings
@@ -129,8 +129,14 @@ export default function PomodoroModal() {
               />
             </div>
 
-            {viewMode === "history" ? (
-              <div className="absolute inset-0 z-10 h-full rounded-3xl bg-white p-4 dark:bg-zinc-950 sm:p-6">
+            <div
+              className={
+                viewMode === "settings"
+                  ? "hidden h-full"
+                  : "h-full min-h-0"
+              }
+            >
+              <div className="h-full rounded-3xl bg-white p-4 dark:bg-zinc-950 sm:p-6">
                 <FocusSessionHistory
                   sessions={sessions}
                   isLoading={isLoading}
@@ -138,7 +144,7 @@ export default function PomodoroModal() {
                   onBackToSettings={() => setViewMode("settings")}
                 />
               </div>
-            ) : null}
+            </div>
           </div>
         </div>
       </section>
