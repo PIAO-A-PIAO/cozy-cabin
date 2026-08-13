@@ -41,6 +41,13 @@ type FocusSessionRecord = {
 
 type PomodoroTimerProps = {
   onSessionRecorded?: (session: FocusSessionRecord) => void;
+  onCompactStateChange?: (state: {
+    status: StatusType;
+    timerMode: TimerModeType;
+    timeRemaining: number;
+    currentSession: number;
+    totalSessions: number;
+  }) => void;
 };
 
 async function createFocusSession(
@@ -65,7 +72,10 @@ async function createFocusSession(
   return (await res.json()) as FocusSessionRecord;
 }
 
-function PomodoroTimer({ onSessionRecorded }: PomodoroTimerProps) {
+function PomodoroTimer({
+  onSessionRecorded,
+  onCompactStateChange,
+}: PomodoroTimerProps) {
   const [timerMode, setTimerMode] = useState<TimerModeType>("focus");
   const [timeRemaining, setTimeRemaining] = useState(DEFAULT_FOCUS_MINUTES * 60);
   const [status, setStatus] = useState<StatusType>("idle");
@@ -75,6 +85,23 @@ function PomodoroTimer({ onSessionRecorded }: PomodoroTimerProps) {
   const [roundsCompleted, setRoundsCompleted] = useState(0);
   const [roundsRemaining, setRoundsRemaining] = useState(DEFAULT_TOTAL_ROUNDS);
   const sessionRecorded = useRef(false);
+
+  useEffect(() => {
+    onCompactStateChange?.({
+      status,
+      timerMode,
+      timeRemaining,
+      currentSession: Math.min(roundsCompleted + 1, totalRounds),
+      totalSessions: totalRounds,
+    });
+  }, [
+    onCompactStateChange,
+    status,
+    timerMode,
+    timeRemaining,
+    roundsCompleted,
+    totalRounds,
+  ]);
 
   const persistPlan = (
     nextFocusMinutes: number,
