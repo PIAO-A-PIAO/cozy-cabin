@@ -2,31 +2,45 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import CountDown from "./CountDown";
+import FocusPlan from "./FocusPlan";
 
 type StatusType = "idle" | "running" | "paused";
-type TimerModeType = "focus" | "break";
+export type TimerModeType = "focus" | "break";
 
-const MODE_SECONDS: Record<TimerModeType, number> = {
-  focus: 25 * 60,
-  break: 5 * 60,
-};
-
-const MODE_LABELS: Record<TimerModeType, string> = {
-  focus: "Focus",
-  break: "Break",
-};
+const DEFAULT_FOCUS_MINUTES = 25;
+const DEFAULT_BREAK_MINUTES = 5;
+const DEFAULT_TOTAL_ROUNDS = 1;
 
 const STORAGE_KEYS = {
   timeRemaining: "local_timer_timeRemaining",
   endTime: "local_timer_endTime",
   status: "local_timer_status",
   mode: "local_timer_mode",
+  focusMinutes: "local_timer_focusMinutes",
+  breakMinutes: "local_timer_breakMinutes",
+  totalRounds: "local_timer_totalRounds",
+  roundsCompleted: "local_timer_roundsCompleted",
+  roundsRemaining: "local_timer_roundsRemaining",
 };
 
 const BUTTON_LABELS: Record<StatusType, string> = {
   idle: "Start",
   running: "Pause",
   paused: "Resume",
+};
+
+type FocusSessionRecord = {
+  id: string;
+  plannedDurationMinutes: number;
+  actualDurationMinutes: number;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+};
+
+type PomodoroTimerProps = {
+  onSessionRecorded?: (session: FocusSessionRecord) => void;
 };
 
 async function createFocusSession(
@@ -48,27 +62,34 @@ async function createFocusSession(
     throw new Error("Failed to create focus session");
   }
 
-  return res.json();
+  return (await res.json()) as FocusSessionRecord;
 }
-
-type FocusSessionRecord = {
-  id: string;
-  plannedDurationMinutes: number;
-  actualDurationMinutes: number;
-  createdAt: string;
-  updatedAt: string;
-  userId: string;
-};
-
-type PomodoroTimerProps = {
-  onSessionRecorded?: (session: FocusSessionRecord) => void;
-};
 
 function PomodoroTimer({ onSessionRecorded }: PomodoroTimerProps) {
   const [timerMode, setTimerMode] = useState<TimerModeType>("focus");
-  const [timeRemaining, setTimeRemaining] = useState(MODE_SECONDS.focus);
+  const [timeRemaining, setTimeRemaining] = useState(DEFAULT_FOCUS_MINUTES * 60);
   const [status, setStatus] = useState<StatusType>("idle");
+  const [focusMinutes, setFocusMinutes] = useState(DEFAULT_FOCUS_MINUTES);
+  const [breakMinutes, setBreakMinutes] = useState(DEFAULT_BREAK_MINUTES);
+  const [totalRounds, setTotalRounds] = useState(DEFAULT_TOTAL_ROUNDS);
+  const [roundsCompleted, setRoundsCompleted] = useState(0);
+  const [roundsRemaining, setRoundsRemaining] = useState(DEFAULT_TOTAL_ROUNDS);
   const sessionRecorded = useRef(false);
+
+  const persistPlan = (
+    nextFocusMinutes: number,
+    nextBreakMinutes: number,
+    nextTotalRounds: number,
+  ) => {
+    localStorage.setItem(STORAGE_KEYS.focusMinutes, String(nextFocusMinutes));
+    localStorage.setItem(STORAGE_KEYS.breakMinutes, String(nextBreakMinutes));
+    localStorage.setItem(STORAGE_KEYS.totalRounds, String(nextTotalRounds));
+  };
+
+  const persistCounters = (completed: number, remaining: number) => {
+    localStorage.setItem(STORAGE_KEYS.roundsCompleted, String(completed));
+    localStorage.setItem(STORAGE_KEYS.roundsRemaining, String(remaining));
+  };
 
   const clearSavedTimer = () => {
     localStorage.removeItem(STORAGE_KEYS.timeRemaining);
@@ -76,91 +97,242 @@ function PomodoroTimer({ onSessionRecorded }: PomodoroTimerProps) {
     localStorage.removeItem(STORAGE_KEYS.status);
   };
 
-  const handleModeChange = (mode: TimerModeType) => {
-    localStorage.setItem(STORAGE_KEYS.mode, mode);
+  const setRunningCountdown = (mode: TimerModeType, seconds: number) => {
     setTimerMode(mode);
-    setTimeRemaining(MODE_SECONDS[mode]);
+    setTimeRemaining(seconds);
+    setStatus("running");
+    localStorage.setItem(STORAGE_KEYS.mode, mode);
+    localStorage.setItem(STORAGE_KEYS.status, "running");
+    localStorage.setItem(
+      STORAGE_KEYS.endTime,
+      String(Date.now() + seconds * 1000),
+    );
+  };
+
+  const setPausedCountdown = (mode: TimerModeType, seconds: number) => {
+    setTimerMode(mode);
+    setTimeRemaining(seconds);
+    setStatus("paused");
+    localStorage.setItem(STORAGE_KEYS.mode, mode);
+    localStorage.setItem(STORAGE_KEYS.status, "paused");
+    localStorage.setItem(STORAGE_KEYS.timeRemaining, String(seconds));
+    localStorage.removeItem(STORAGE_KEYS.endTime);
+  };
+
+  const setIdlePlan = () => {
+    setTimerMode("focus");
+    setTimeRemaining(focusMinutes * 60);
     setStatus("idle");
-    sessionRecorded.current = false;
     clearSavedTimer();
+    persistCounters(0, totalRounds);
+    setRoundsCompleted(0);
+    setRoundsRemaining(totalRounds);
+    sessionRecorded.current = false;
+    localStorage.setItem(STORAGE_KEYS.mode, "focus");
+  };
+
+  const commitPlanChange = (
+    nextFocusMinutes: number,
+    nextBreakMinutes: number,
+    nextTotalRounds: number,
+  ) => {
+    setFocusMinutes(nextFocusMinutes);
+    setBreakMinutes(nextBreakMinutes);
+    setTotalRounds(nextTotalRounds);
+    setRoundsCompleted(0);
+    setRoundsRemaining(nextTotalRounds);
+    sessionRecorded.current = false;
+    persistPlan(nextFocusMinutes, nextBreakMinutes, nextTotalRounds);
+    persistCounters(0, nextTotalRounds);
+  };
+
+  const handleFocusMinutesAdjustment = (
+    digit: "tens" | "ones",
+    direction: "up" | "down",
+  ) => {
+    const tens = Math.floor(focusMinutes / 10);
+    const ones = focusMinutes % 10;
+
+    let nextValue =
+      digit === "tens"
+        ? (((tens + (direction === "up" ? 1 : -1) + 10) % 10) * 10 + ones)
+        : tens * 10 + (ones === 0 ? 5: 0);
+
+    if (nextValue === 0) {
+      nextValue = 5;
+    }
+
+    commitPlanChange(nextValue, breakMinutes, totalRounds);
+  };
+
+  const handleBreakMinutesAdjustment = (
+    digit: "tens" | "ones",
+    direction: "up" | "down",
+  ) => {
+    const tens = Math.floor(breakMinutes / 10);
+    const ones = breakMinutes % 10;
+
+    const nextValue =
+      digit === "tens"
+        ? (((tens + (direction === "up" ? 1 : -1) + 10) % 10) * 10 + ones)
+        : tens * 10 + (ones + (direction === "up" ? 1 : -1) + 10) % 10;
+
+    commitPlanChange(focusMinutes, nextValue, totalRounds);
+  };
+
+  const handleRoundsAdjustment = (direction: "up" | "down") => {
+    let nextValue =
+      totalRounds + (direction === "up" ? 1 : -1);
+
+    if (nextValue > 10) {
+      nextValue = 1;
+    }
+
+    if (nextValue < 1) {
+      nextValue = 10;
+    }
+
+    commitPlanChange(focusMinutes, breakMinutes, nextValue);
+  };
+
+  const recordFocusSession = async (actualDurationMinutes: number) => {
+    const session = await createFocusSession(
+      focusMinutes,
+      actualDurationMinutes,
+    );
+    onSessionRecorded?.(session);
   };
 
   const handleClick = () => {
-    localStorage.removeItem(STORAGE_KEYS.timeRemaining);
     switch (status) {
-      case "idle":
+      case "idle": {
+        setRoundsCompleted(0);
+        setRoundsRemaining(totalRounds);
+        persistCounters(0, totalRounds);
+        sessionRecorded.current = false;
+        setRunningCountdown("focus", focusMinutes * 60);
+        return;
+      }
       case "paused":
-        return handleStart();
+        return setRunningCountdown(timerMode, timeRemaining);
       case "running":
-        return handlePause();
+        return setPausedCountdown(timerMode, timeRemaining);
     }
-  };
-
-  const handleStart = () => {
-    localStorage.setItem(STORAGE_KEYS.endTime, String(Date.now() + timeRemaining * 1000));
-    localStorage.setItem(STORAGE_KEYS.status, "running");
-    setStatus("running");
-  };
-
-  const handlePause = () => {
-    localStorage.setItem(STORAGE_KEYS.status, "paused");
-    localStorage.setItem(STORAGE_KEYS.timeRemaining, String(timeRemaining));
-    setStatus("paused");
   };
 
   const handleReset = () => {
-    const shouldRecordInterruptedSession = timerMode === "focus" && status !== "idle" && !sessionRecorded.current;
-    if (shouldRecordInterruptedSession) {
-      const actualDurationMinutes = Math.max(0, Math.floor((MODE_SECONDS.focus - timeRemaining) / 60));
+    if (timerMode === "focus" && status !== "idle" && !sessionRecorded.current) {
+      const actualDurationMinutes = Math.max(
+        0,
+        Math.floor((focusMinutes * 60 - timeRemaining) / 60),
+      );
       if (actualDurationMinutes >= 5) {
         sessionRecorded.current = true;
-        void createFocusSession(25, actualDurationMinutes)
-          .then((session: FocusSessionRecord) => {
-            onSessionRecorded?.(session);
-          })
-          .catch(() => {
-            toast.error("Failed to save focus session.");
-          });
+        void recordFocusSession(actualDurationMinutes).catch(() => {
+          toast.error("Failed to save focus session.");
+        });
       }
     }
+
     clearSavedTimer();
-    sessionRecorded.current = false;
-    setTimeRemaining(MODE_SECONDS[timerMode]);
+    setTimerMode("focus");
+    setTimeRemaining(focusMinutes * 60);
     setStatus("idle");
+    setRoundsCompleted(0);
+    setRoundsRemaining(totalRounds);
+    sessionRecorded.current = false;
+    persistCounters(0, totalRounds);
+    localStorage.setItem(STORAGE_KEYS.mode, "focus");
   };
 
-  const formatTime = (seconds: number) => {
-    const minute = Math.floor(seconds / 60);
-    const second = seconds % 60;
-    return `${String(minute).padStart(2, "0")}:${String(second).padStart(2, "0")}`;
+  const handleSkipBreak = () => {
+    if (roundsRemaining > 0) {
+      sessionRecorded.current = false;
+
+      const nextMode: TimerModeType = "focus";
+      const nextSeconds = focusMinutes * 60;
+
+      if (status === "paused") {
+        setPausedCountdown(nextMode, nextSeconds);
+      } else {
+        setRunningCountdown(nextMode, nextSeconds);
+      }
+      return;
+    }
+
+    setIdlePlan();
   };
 
   useEffect(() => {
-    const restoreTimer = () => {
-      const storedTimerMode = localStorage.getItem(STORAGE_KEYS.mode) as TimerModeType | null;
-      if (storedTimerMode) {
-        setTimerMode(storedTimerMode);
-        setTimeRemaining(MODE_SECONDS[storedTimerMode]);
-      }
+    const loadNumber = (key: string, fallback: number) => {
+      const raw = localStorage.getItem(key);
+      const value = Number(raw);
+      return Number.isFinite(value) ? value : fallback;
+    };
 
-      const timerStatus = localStorage.getItem(STORAGE_KEYS.status) as StatusType | null;
+    const storedFocusMinutes = loadNumber(
+      STORAGE_KEYS.focusMinutes,
+      DEFAULT_FOCUS_MINUTES,
+    );
+    const storedBreakMinutes = loadNumber(
+      STORAGE_KEYS.breakMinutes,
+      DEFAULT_BREAK_MINUTES,
+    );
+    const storedTotalRounds = loadNumber(
+      STORAGE_KEYS.totalRounds,
+      DEFAULT_TOTAL_ROUNDS,
+    );
+    const storedStatus = localStorage.getItem(
+      STORAGE_KEYS.status,
+    ) as StatusType | null;
+    const storedTimerMode = localStorage.getItem(
+      STORAGE_KEYS.mode,
+    ) as TimerModeType | null;
+    const storedRoundsCompleted = loadNumber(
+      STORAGE_KEYS.roundsCompleted,
+      0,
+    );
+    const storedRoundsRemaining = loadNumber(
+      STORAGE_KEYS.roundsRemaining,
+      storedTotalRounds,
+    );
 
-      if (timerStatus === "paused") {
-        setTimeRemaining(Number(localStorage.getItem(STORAGE_KEYS.timeRemaining)));
-        setStatus(timerStatus);
-        return;
-      }
+    setFocusMinutes(storedFocusMinutes);
+    setBreakMinutes(storedBreakMinutes);
+    setTotalRounds(storedTotalRounds);
 
+    if (storedStatus === "paused") {
+      setTimerMode(storedTimerMode ?? "focus");
+      setTimeRemaining(Number(localStorage.getItem(STORAGE_KEYS.timeRemaining)));
+      setStatus("paused");
+      setRoundsCompleted(storedRoundsCompleted);
+      setRoundsRemaining(storedRoundsRemaining);
+      return;
+    }
+
+    if (storedStatus === "running") {
+      setTimerMode(storedTimerMode ?? "focus");
       const endTime = localStorage.getItem(STORAGE_KEYS.endTime);
-      if (endTime && timerStatus === "running") {
+      if (endTime) {
         const timeDifference = Number(endTime) - Date.now();
         const toNumber = Math.max(0, Math.floor(timeDifference / 1000));
         setTimeRemaining(toNumber);
-        setStatus(timerStatus);
+      } else {
+        setTimeRemaining(storedTimerMode === "break"
+          ? storedBreakMinutes * 60
+          : storedFocusMinutes * 60);
       }
-    };
+      setStatus("running");
+      setRoundsCompleted(storedRoundsCompleted);
+      setRoundsRemaining(storedRoundsRemaining);
+      return;
+    }
 
-    restoreTimer();
+    setTimerMode("focus");
+    setTimeRemaining(storedFocusMinutes * 60);
+    setStatus("idle");
+    setRoundsCompleted(0);
+    setRoundsRemaining(storedTotalRounds);
   }, []);
 
   useEffect(() => {
@@ -179,24 +351,42 @@ function PomodoroTimer({ onSessionRecorded }: PomodoroTimerProps) {
   }, [status]);
 
   useEffect(() => {
-    if (timeRemaining !== 0) return;
+    if (timeRemaining !== 0) {
+      return;
+    }
 
     if (timerMode === "focus") {
+      const nextCompleted = roundsCompleted + 1;
+      const nextRemaining = Math.max(0, roundsRemaining - 1);
+
+      setRoundsCompleted(nextCompleted);
+      setRoundsRemaining(nextRemaining);
+      persistCounters(nextCompleted, nextRemaining);
+
       if (!sessionRecorded.current) {
         sessionRecorded.current = true;
-        void createFocusSession(25, 25)
-          .then((session: FocusSessionRecord) => {
-            onSessionRecorded?.(session);
-          })
-          .catch(() => {
-            toast.error("Failed to save focus session.");
-          });
+        void recordFocusSession(focusMinutes).catch(() => {
+          toast.error("Failed to save focus session.");
+        });
       }
 
-      setTimerMode("break");
-      setTimeRemaining(MODE_SECONDS.break);
-      setStatus("idle");
-      clearSavedTimer();
+      if (nextRemaining > 0) {
+        if (breakMinutes > 0) {
+          setRunningCountdown("break", breakMinutes * 60);
+        } else {
+          setRunningCountdown("focus", focusMinutes * 60);
+        }
+      } else {
+        sessionRecorded.current = false;
+        setTimerMode("focus");
+        setTimeRemaining(focusMinutes * 60);
+        setStatus("idle");
+        clearSavedTimer();
+        setRoundsCompleted(0);
+        setRoundsRemaining(totalRounds);
+        persistCounters(0, totalRounds);
+        localStorage.setItem(STORAGE_KEYS.mode, "focus");
+      }
 
       toast.success("Focus session complete. Time for a short break.", {
         duration: 10000,
@@ -204,23 +394,36 @@ function PomodoroTimer({ onSessionRecorded }: PomodoroTimerProps) {
       return;
     }
 
-    setTimerMode("focus");
-    setTimeRemaining(MODE_SECONDS.focus);
-    setStatus("idle");
-    clearSavedTimer();
-    sessionRecorded.current = false;
+    if (roundsRemaining > 0) {
+      sessionRecorded.current = false;
+      if (focusMinutes > 0) {
+        setRunningCountdown("focus", focusMinutes * 60);
+      } else {
+        setRunningCountdown("focus", 0);
+      }
+    } else {
+      setIdlePlan();
+    }
 
     toast.success("Break finished. Ready to focus again?", {
-      duration: 10000
+      duration: 10000,
     });
-  }, [timeRemaining, timerMode]);
+  }, [
+    timeRemaining,
+    timerMode,
+    roundsCompleted,
+    roundsRemaining,
+    focusMinutes,
+    breakMinutes,
+    totalRounds,
+  ]);
 
   const buttonLabel = BUTTON_LABELS[status];
   const secondaryButtonLabel =
     timerMode === "break" ? "Skip Break" : "Reset";
   const handleSecondaryClick = () => {
     if (timerMode === "break") {
-      handleModeChange("focus");
+      handleSkipBreak();
       return;
     }
 
@@ -229,12 +432,27 @@ function PomodoroTimer({ onSessionRecorded }: PomodoroTimerProps) {
 
   return (
     <section className="w-full max-w-sm rounded-lg border border-zinc-200 bg-white p-6 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-      <p className="mb-2 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-        {MODE_LABELS[timerMode]}
-      </p>
-      <div className="font-mono text-6xl font-semibold tracking-normal text-zinc-950 dark:text-zinc-50">
-        {formatTime(timeRemaining)}
-      </div>
+      {status === "idle" ? (
+        <FocusPlan
+          focusMinutes={focusMinutes}
+          breakMinutes={breakMinutes}
+          totalRounds={totalRounds}
+          roundsCompleted={roundsCompleted}
+          roundsRemaining={roundsRemaining}
+          showBreak={totalRounds > 1}
+          onAdjustFocusMinutes={handleFocusMinutesAdjustment}
+          onAdjustBreakMinutes={handleBreakMinutesAdjustment}
+          onAdjustRounds={handleRoundsAdjustment}
+        />
+      ) : (
+        <CountDown
+          seconds={timeRemaining}
+          currentSession={Math.min(roundsCompleted + 1, totalRounds)}
+          totalSessions={totalRounds}
+          timerMode={timerMode}
+        />
+      )}
+
       <div className="mt-6 grid grid-cols-2 gap-3">
         <button
           onClick={handleClick}
@@ -243,7 +461,7 @@ function PomodoroTimer({ onSessionRecorded }: PomodoroTimerProps) {
           {buttonLabel}
         </button>
         <button
-          disabled={timerMode == "focus" && status === "idle"}
+          disabled={timerMode === "focus" && status === "idle"}
           onClick={handleSecondaryClick}
           className="rounded border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
         >
