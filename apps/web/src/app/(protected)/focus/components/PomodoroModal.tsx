@@ -25,6 +25,10 @@ export default function PomodoroModal({ onClose }: PomodoroModalProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const handleSessionRecorded = (session: FocusSession) => {
+    setSessions((current) => [session, ...current]);
+  };
+
   useEffect(() => {
     const loadSessions = async () => {
       try {
@@ -58,14 +62,15 @@ export default function PomodoroModal({ onClose }: PomodoroModalProps) {
         </button>
 
         {viewMode === "settings" ? (
-          <PomodoroSettings
-            sessions={sessions}
-            isLoading={isLoading}
-            error={error}
-            onSeeHistory={() => setViewMode("history")}
-          />
-        ) : (
-          <FocusSessionHistory
+        <PomodoroSettings
+          sessions={sessions}
+          isLoading={isLoading}
+          error={error}
+          onSeeHistory={() => setViewMode("history")}
+          onSessionRecorded={handleSessionRecorded}
+        />
+      ) : (
+        <FocusSessionHistory
             sessions={sessions}
             isLoading={isLoading}
             error={error}

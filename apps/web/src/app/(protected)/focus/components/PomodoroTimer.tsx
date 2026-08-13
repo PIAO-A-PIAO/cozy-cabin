@@ -47,9 +47,24 @@ async function createFocusSession(
   if (!res.ok) {
     throw new Error("Failed to create focus session");
   }
+
+  return res.json();
 }
 
-function PomodoroTimer() {
+type FocusSessionRecord = {
+  id: string;
+  plannedDurationMinutes: number;
+  actualDurationMinutes: number;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+};
+
+type PomodoroTimerProps = {
+  onSessionRecorded?: (session: FocusSessionRecord) => void;
+};
+
+function PomodoroTimer({ onSessionRecorded }: PomodoroTimerProps) {
   const [timerMode, setTimerMode] = useState<TimerModeType>("focus");
   const [timeRemaining, setTimeRemaining] = useState(MODE_SECONDS.focus);
   const [status, setStatus] = useState<StatusType>("idle");
@@ -99,9 +114,13 @@ function PomodoroTimer() {
       const actualDurationMinutes = Math.max(0, Math.floor((MODE_SECONDS.focus - timeRemaining) / 60));
       if (actualDurationMinutes >= 5) {
         sessionRecorded.current = true;
-        void createFocusSession(25, actualDurationMinutes).catch(() => {
-          toast.error("Failed to save focus session.");
-        });
+        void createFocusSession(25, actualDurationMinutes)
+          .then((session: FocusSessionRecord) => {
+            onSessionRecorded?.(session);
+          })
+          .catch(() => {
+            toast.error("Failed to save focus session.");
+          });
       }
     }
     clearSavedTimer();
@@ -165,9 +184,13 @@ function PomodoroTimer() {
     if (timerMode === "focus") {
       if (!sessionRecorded.current) {
         sessionRecorded.current = true;
-        void createFocusSession(25, 25).catch(() => {
-          toast.error("Failed to save focus session.");
-        });
+        void createFocusSession(25, 25)
+          .then((session: FocusSessionRecord) => {
+            onSessionRecorded?.(session);
+          })
+          .catch(() => {
+            toast.error("Failed to save focus session.");
+          });
       }
 
       setTimerMode("break");

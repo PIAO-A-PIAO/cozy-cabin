@@ -9,6 +9,7 @@ type PomodoroSettingsProps = {
   isLoading: boolean;
   error: string | null;
   onSeeHistory: () => void;
+  onSessionRecorded: (session: FocusSession) => void;
 };
 
 export default function PomodoroSettings({
@@ -16,11 +17,12 @@ export default function PomodoroSettings({
   isLoading,
   error,
   onSeeHistory,
+  onSessionRecorded,
 }: PomodoroSettingsProps) {
   return (
     <div className="grid gap-5 lg:grid-rows-[auto_auto]">
       <div className="flex justify-center">
-        <PomodoroTimer />
+        <PomodoroTimer onSessionRecorded={onSessionRecorded} />
       </div>
       <FocusSessionToday
         sessions={sessions}
