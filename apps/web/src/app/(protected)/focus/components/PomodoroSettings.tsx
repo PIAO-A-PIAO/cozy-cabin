@@ -28,19 +28,21 @@ export default function PomodoroSettings({
   onCompactStateChange,
 }: PomodoroSettingsProps) {
   return (
-    <div className="grid gap-5 lg:grid-rows-[auto_auto]">
+    <div className="flex h-full min-h-0 flex-col gap-5">
       <div className="flex justify-center">
         <PomodoroTimer
           onSessionRecorded={onSessionRecorded}
           onCompactStateChange={onCompactStateChange}
         />
       </div>
-      <FocusSessionToday
-        sessions={sessions}
-        isLoading={isLoading}
-        error={error}
-        onSeeHistory={onSeeHistory}
-      />
+      <div className="min-h-0 flex-1">
+        <FocusSessionToday
+          sessions={sessions}
+          isLoading={isLoading}
+          error={error}
+          onSeeHistory={onSeeHistory}
+        />
+      </div>
     </div>
   );
 }

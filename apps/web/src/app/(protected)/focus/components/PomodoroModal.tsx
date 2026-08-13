@@ -76,6 +76,11 @@ export default function PomodoroModal() {
       ? "Start Focusing"
       : `${compactState.timerMode === "focus" ? "Focus" : "Break"} - ${formatTime(compactState.timeRemaining)}`;
 
+  const handleClose = () => {
+    setViewMode("settings");
+    setIsOpen(false);
+  };
+
   return (
     <>
       <button
@@ -97,32 +102,44 @@ export default function PomodoroModal() {
             : "hidden"
         }
       >
-        <div className="relative w-full max-w-4xl rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-6">
+        <div className="relative flex h-[min(80vh,44rem)] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-6">
           <button
             type="button"
-            onClick={() => setIsOpen(false)}
+            onClick={handleClose}
             className="absolute right-4 top-4 rounded-full border border-zinc-200 px-3 py-1 text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-950 dark:border-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-50"
           >
             Close
           </button>
 
-          {viewMode === "settings" ? (
-            <PomodoroSettings
-              sessions={sessions}
-              isLoading={isLoading}
-              error={error}
-              onSeeHistory={() => setViewMode("history")}
-              onSessionRecorded={handleSessionRecorded}
-              onCompactStateChange={setCompactState}
-            />
-          ) : (
-            <FocusSessionHistory
-              sessions={sessions}
-              isLoading={isLoading}
-              error={error}
-              onBackToSettings={() => setViewMode("settings")}
-            />
-          )}
+          <div className="relative mt-8 flex-1 min-h-0">
+            <div
+              className={
+                viewMode === "history"
+                  ? "invisible h-full pointer-events-none select-none"
+                  : ""
+              }
+            >
+              <PomodoroSettings
+                sessions={sessions}
+                isLoading={isLoading}
+                error={error}
+                onSeeHistory={() => setViewMode("history")}
+                onSessionRecorded={handleSessionRecorded}
+                onCompactStateChange={setCompactState}
+              />
+            </div>
+
+            {viewMode === "history" ? (
+              <div className="absolute inset-0 z-10 h-full rounded-3xl bg-white p-4 dark:bg-zinc-950 sm:p-6">
+                <FocusSessionHistory
+                  sessions={sessions}
+                  isLoading={isLoading}
+                  error={error}
+                  onBackToSettings={() => setViewMode("settings")}
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
       </section>
     </>

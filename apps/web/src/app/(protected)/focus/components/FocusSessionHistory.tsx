@@ -29,7 +29,7 @@ export default function FocusSessionHistory({
   onBackToSettings,
 }: FocusSessionHistoryProps) {
   return (
-    <div>
+    <div className="flex h-full min-h-0 flex-col">
       <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-zinc-200 pb-4 dark:border-zinc-800">
         <button
           type="button"
@@ -49,7 +49,7 @@ export default function FocusSessionHistory({
       ) : error ? (
         <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
       ) : (
-        <div className="max-h-[34rem] overflow-y-auto pr-1">
+        <div className="min-h-0 flex-1 overflow-y-auto pr-1">
           {sessions.length === 0 ? (
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
               No focus sessions yet.
