@@ -193,26 +193,19 @@ function PomodoroTimer() {
   }, [timeRemaining, timerMode]);
 
   const buttonLabel = BUTTON_LABELS[status];
+  const secondaryButtonLabel =
+    timerMode === "break" ? "Skip Break" : "Reset";
+  const handleSecondaryClick = () => {
+    if (timerMode === "break") {
+      handleModeChange("focus");
+      return;
+    }
+
+    handleReset();
+  };
 
   return (
     <section className="w-full max-w-sm rounded-lg border border-zinc-200 bg-white p-6 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-      <div className="mb-6 grid grid-cols-2 rounded border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-800 dark:bg-zinc-900">
-        {(["focus", "break"] as TimerModeType[]).map((mode) => (
-          <button
-            key={mode}
-            disabled={mode === timerMode}
-            onClick={() => handleModeChange(mode)}
-            className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
-              timerMode === mode
-                ? "bg-white text-zinc-950 shadow-sm dark:bg-zinc-800 dark:text-zinc-50"
-                : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-            }`}
-          >
-            {MODE_LABELS[mode]}
-          </button>
-        ))}
-      </div>
-
       <p className="mb-2 text-sm font-medium text-zinc-500 dark:text-zinc-400">
         {MODE_LABELS[timerMode]}
       </p>
@@ -227,11 +220,11 @@ function PomodoroTimer() {
           {buttonLabel}
         </button>
         <button
-          disabled={status === "idle"}
-          onClick={handleReset}
+          disabled={timerMode == "focus" && status === "idle"}
+          onClick={handleSecondaryClick}
           className="rounded border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
         >
-          Reset
+          {secondaryButtonLabel}
         </button>
       </div>
     </section>
