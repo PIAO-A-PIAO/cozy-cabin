@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { CreateFocusSessionDto } from './focus-session.dto';
@@ -15,6 +15,11 @@ type AuthenticatedRequest = Request & {
 @Controller('focus-sessions')
 export class FocusSessionController {
   constructor(private readonly focusSessionService: FocusSessionService) {}
+
+  @Get()
+  getFocusSessions(@Req() req: AuthenticatedRequest) {
+    return this.focusSessionService.getFocusSessions(req.user.sub);
+  }
 
   @Post()
   createFocusSession(
