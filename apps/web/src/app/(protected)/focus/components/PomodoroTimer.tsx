@@ -97,10 +97,12 @@ function PomodoroTimer() {
     const shouldRecordInterruptedSession = timerMode === "focus" && status !== "idle" && !sessionRecorded.current;
     if (shouldRecordInterruptedSession) {
       const actualDurationMinutes = Math.max(0, Math.floor((MODE_SECONDS.focus - timeRemaining) / 60));
-      sessionRecorded.current = true;
-      void createFocusSession(25, actualDurationMinutes).catch(() => {
-        toast.error("Failed to save focus session.");
-      });
+      if (actualDurationMinutes >= 5) {
+        sessionRecorded.current = true;
+        void createFocusSession(25, actualDurationMinutes).catch(() => {
+          toast.error("Failed to save focus session.");
+        });
+      }
     }
     clearSavedTimer();
     sessionRecorded.current = false;
