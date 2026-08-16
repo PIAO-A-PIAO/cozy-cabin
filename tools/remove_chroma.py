@@ -30,6 +30,7 @@ MAGENTA_KEY = (255, 0, 255)
 @dataclass(frozen=True)
 class ProcessOptions:
     key_color: tuple[int, int, int]
+    adaptive_key: bool
     threshold: int
     softness: int
     edge_cleanup: int
@@ -91,6 +92,57 @@ def color_distance(pixel: tuple[int, int, int], key: tuple[int, int, int]) -> fl
     ) ** 0.5
 
 
+def estimate_border_key_color(
+    image: Image.Image,
+    fallback_key_color: tuple[int, int, int],
+) -> tuple[int, int, int]:
+    """Estimate the chroma background color from the image border.
+
+    The preset keys are still the default, but many assets use a slightly shifted
+    screen color instead of a mathematically pure green or magenta. Sampling the
+    outer border keeps the default behavior robust without requiring per-image
+    manual tuning.
+    """
+
+    rgb_image = image.convert("RGB")
+    width, height = rgb_image.size
+    pixels = rgb_image.load()
+    border_samples: list[tuple[int, int, int]] = []
+
+    for x in range(width):
+        border_samples.append(pixels[x, 0])
+        if height > 1:
+            border_samples.append(pixels[x, height - 1])
+    for y in range(height):
+        border_samples.append(pixels[0, y])
+        if width > 1:
+            border_samples.append(pixels[width - 1, y])
+
+    if not border_samples:
+        return fallback_key_color
+
+    red_total = 0
+    green_total = 0
+    blue_total = 0
+    for red, green, blue in border_samples:
+        red_total += red
+        green_total += green
+        blue_total += blue
+
+    count = len(border_samples)
+    estimated_color = (
+        int(round(red_total / count)),
+        int(round(green_total / count)),
+        int(round(blue_total / count)),
+    )
+
+    # Keep the preset if the border clearly does not resemble the selected key.
+    if color_distance(estimated_color, fallback_key_color) > 160:
+        return fallback_key_color
+
+    return estimated_color
+
+
 def smoothstep(value: float) -> float:
     value = max(0.0, min(1.0, value))
     return value * value * (3.0 - 2.0 * value)
@@ -123,11 +175,11 @@ def candidate_background_mask(
     key_color: tuple[int, int, int],
     threshold: int,
     softness: int,
+    connectivity_limit: int,
 ) -> list[bool]:
     width, height = image.size
     rgb_image = image.convert("RGB")
     pixels = rgb_image.load()
-    limit = threshold + softness
     mask = [False] * (width * height)
 
     def index(x: int, y: int) -> int:
@@ -140,7 +192,7 @@ def candidate_background_mask(
         if mask[idx]:
             return
         distance = color_distance(pixels[x, y], key_color)
-        if distance <= limit:
+        if distance <= connectivity_limit:
             mask[idx] = True
             queue.append((x, y))
 
@@ -162,11 +214,71 @@ def candidate_background_mask(
             if mask[idx]:
                 continue
             distance = color_distance(pixels[nx, ny], key_color)
-            if distance <= limit:
+            if distance <= connectivity_limit:
                 mask[idx] = True
                 queue.append((nx, ny))
 
     return mask
+
+
+def fill_enclosed_chroma_regions(
+    image: Image.Image,
+    background_mask: list[bool],
+    key_color: tuple[int, int, int],
+    threshold: int,
+    softness: int,
+) -> list[bool]:
+    """Mark chroma-like regions fully enclosed by the asset as background too."""
+
+    width, height = image.size
+    rgb_image = image.convert("RGB")
+    pixels = rgb_image.load()
+    limit = threshold + softness
+    visited = [False] * (width * height)
+
+    def index(x: int, y: int) -> int:
+        return y * width + x
+
+    for y in range(height):
+        for x in range(width):
+            start_idx = index(x, y)
+            if visited[start_idx] or background_mask[start_idx]:
+                continue
+
+            if color_distance(pixels[x, y], key_color) > limit:
+                visited[start_idx] = True
+                continue
+
+            queue: deque[tuple[int, int]] = deque([(x, y)])
+            component: list[int] = []
+            touches_border = False
+            visited[start_idx] = True
+
+            while queue:
+                cx, cy = queue.popleft()
+                cidx = index(cx, cy)
+                component.append(cidx)
+
+                if cx == 0 or cy == 0 or cx == width - 1 or cy == height - 1:
+                    touches_border = True
+
+                for nx, ny in ((cx - 1, cy), (cx + 1, cy), (cx, cy - 1), (cx, cy + 1)):
+                    if nx < 0 or ny < 0 or nx >= width or ny >= height:
+                        continue
+                    nidx = index(nx, ny)
+                    if visited[nidx] or background_mask[nidx]:
+                        continue
+                    if color_distance(pixels[nx, ny], key_color) > limit:
+                        visited[nidx] = True
+                        continue
+                    visited[nidx] = True
+                    queue.append((nx, ny))
+
+            if not touches_border:
+                for component_idx in component:
+                    background_mask[component_idx] = True
+
+    return background_mask
 
 
 def background_distance_map(background_mask: list[bool], width: int, height: int) -> list[int]:
@@ -362,6 +474,7 @@ def build_debug_edge_image(
 def build_alpha_and_rgb(
     image: Image.Image,
     key_color: tuple[int, int, int],
+    adaptive_key: bool,
     threshold: int,
     softness: int,
     edge_cleanup: int,
@@ -369,8 +482,15 @@ def build_alpha_and_rgb(
     source = image.convert("RGBA")
     width, height = source.size
     pixels = source.load()
+    effective_key_color = (
+        estimate_border_key_color(source, key_color) if adaptive_key else key_color
+    )
+    connectivity_limit = max(8, min(threshold + softness, 128))
     background_mask = candidate_background_mask(
-        source, key_color, threshold, softness
+        source, effective_key_color, threshold, softness, connectivity_limit
+    )
+    background_mask = fill_enclosed_chroma_regions(
+        source, background_mask, effective_key_color, threshold, softness
     )
     distance_map = background_distance_map(background_mask, width, height)
     alpha_map, edge_band = build_alpha_map(
@@ -378,7 +498,7 @@ def build_alpha_and_rgb(
         distance_map,
         width,
         height,
-        key_color,
+        effective_key_color,
         threshold,
         softness,
         edge_cleanup,
@@ -414,7 +534,7 @@ def build_alpha_and_rgb(
                     )
                 red, green, blue = suppress_chroma_spill(
                     (red, green, blue),
-                    key_color,
+                    effective_key_color,
                     alpha,
                     local_average=local_average,
                     edge_distance=distance_map[idx],
@@ -492,6 +612,7 @@ def process_image(
     result, mask, debug_edge = build_alpha_and_rgb(
         image,
         options.key_color,
+        options.adaptive_key,
         options.threshold,
         options.softness,
         options.edge_cleanup,
@@ -648,6 +769,7 @@ def build_options(args: argparse.Namespace) -> ProcessOptions:
         raise ValueError("--softness must be greater than 0.")
     return ProcessOptions(
         key_color=resolve_key_color(args),
+        adaptive_key=args.color is None,
         threshold=args.threshold,
         softness=args.softness,
         edge_cleanup=args.edge_cleanup,
