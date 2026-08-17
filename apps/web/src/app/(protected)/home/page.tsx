@@ -1,4 +1,5 @@
 import Image from "next/image";
+import PomodoroModal from "../focus/components/PomodoroModal";
 
 const foregroundAssets = [
   {
@@ -74,12 +75,6 @@ const foregroundAssets = [
       "absolute left-[41%] top-[46%] aspect-[292/178] w-[10%] -translate-x-1/2",
   },
   {
-    src: "/assets/room/pomodoro.png",
-    alt: "Pomodoro timer",
-    wrapperClassName:
-      "absolute left-[60%] top-[48%] aspect-[207/154] w-[7%] -translate-x-1/2",
-  },
-  {
     src: "/assets/room/dog.png",
     alt: "Dog",
     wrapperClassName:
@@ -100,30 +95,38 @@ export default function HomePage() {
             fill
             priority
             sizes="100vw"
+            draggable={false}
             className="absolute inset-0 h-full w-full object-cover"
           />
-          
 
           <div className="relative h-full w-full">
-            <div key="weather" className="absolute left-[23%] top-[6%] h-auto aspect-[1149/596] w-[40%]">
-            <Image
-              src="/assets/weather/clear.jpg"
-              alt="Clear weather view"
-              fill
-              sizes="100vw"
-              className="object-cover"
-            /></div>
-            {foregroundAssets.map((asset) => (
-              <div key={asset.src} className={asset.wrapperClassName}>
+            <div
+              key="weather"
+              className="absolute left-[23%] top-[6%] aspect-[1149/596] h-auto w-[40%]"
+            >
               <Image
-                src={asset.src}
-                alt={asset.alt}
+                src="/assets/weather/clear.jpg"
+                alt="Clear weather view"
                 fill
                 sizes="100vw"
-                className="object-contain drop-shadow-2xl"
+                draggable={false}
+                className="object-cover"
               />
             </div>
-          ))}
+            {foregroundAssets.map((asset) => (
+              <div key={asset.src} className={asset.wrapperClassName}>
+                <Image
+                  src={asset.src}
+                  alt={asset.alt}
+                  fill
+                  sizes="100vw"
+                  draggable={false}
+                  className="object-contain drop-shadow-2xl"
+                />
+              </div>
+            ))}
+            <PomodoroModal />
+
           </div>
         </div>
       </section>

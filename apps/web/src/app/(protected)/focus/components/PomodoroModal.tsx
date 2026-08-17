@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import FocusSessionHistory from "./FocusSessionHistory";
 import PomodoroSettings from "./PomodoroSettings";
+import Image from "next/image";
 
 export type FocusSession = {
   id: string;
@@ -43,6 +44,7 @@ export default function PomodoroModal() {
   const [sessions, setSessions] = useState<FocusSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [idleTimeLabel, setIdleTimeLabel] = useState<string>()
   const [compactState, setCompactState] =
     useState<CompactTimerState>(INITIAL_COMPACT_STATE);
 
@@ -71,9 +73,26 @@ export default function PomodoroModal() {
     loadSessions();
   }, []);
 
+  useEffect(() => {
+    if (compactState.status !== "idle") return
+
+    const updateClock = () => {
+      setIdleTimeLabel(
+        new Date().toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }),
+      )
+    }
+    updateClock()
+    const id = setInterval(updateClock, 1000)
+    return () => clearInterval(id);
+  }, [compactState])
+
   const compactLabel =
     compactState.status === "idle"
-      ? "Start Focusing"
+      ? idleTimeLabel
       : `${compactState.timerMode === "focus" ? "Focus" : "Break"} - ${formatTime(compactState.timeRemaining)}`;
 
   const handleClose = () => {
@@ -86,11 +105,24 @@ export default function PomodoroModal() {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        aria-expanded={isOpen}
-        aria-controls="pomodoro-modal-panel"
-        className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+        className="absolute left-[60%] top-[48%] aspect-[207/154] w-[7%] -translate-x-1/2"
+        aria-label="Open pomodoro timer"
       >
-        {compactLabel}
+        <Image
+          src="/assets/room/pomodoro.png"
+          alt="Pomodoro timer"
+          fill
+          sizes="100vw"
+          draggable={false}
+          className="object-contain drop-shadow-2xl"
+        />
+
+      <div
+        className="absolute left-[26%] top-[41%] content-center"
+        style={{transform: "matrix(1,0.05,0,1,0,0)"}}
+      >
+          {compactLabel}
+      </div>
       </button>
 
       <section
