@@ -1,9 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
+import ClickableWrap from "../../home/components/ClickableWrap";
 import FocusSessionHistory from "./FocusSessionHistory";
 import PomodoroSettings from "./PomodoroSettings";
-import Image from "next/image";
 
 export type FocusSession = {
   id: string;
@@ -47,7 +48,6 @@ function formatTime(seconds: number) {
 export default function PomodoroModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("settings");
-  const [isHovered, setIsHovered] = useState(false);
   const [sessions, setSessions] = useState<FocusSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -109,36 +109,42 @@ export default function PomodoroModal() {
 
   return (
     <>
-      <button
-        type="button"
+      <ClickableWrap
         onClick={() => setIsOpen(true)}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        className={`absolute left-[60%] top-[48%] -translate-x-1/2 [container-type:inline-size] ${
-          isHovered ? "aspect-[211/154] w-[7.1%]" : "aspect-[207/154] w-[7%]"
-        }`}
-        aria-label="Open pomodoro timer"
+        hoverSrc="/assets/room/pomodoro_highlight.png"
+        defaultWrapperClassName="absolute left-[60%] top-[48%] aspect-[207/154] w-[7%] -translate-x-1/2 [container-type:inline-size]"
+        hoverClassName="object-contain drop-shadow-2xl scale-105 translate-y-[0.08em]"
+        alt="Pomodoro timer"
+        ariaLabel="Open pomodoro timer"
       >
-        <div
-          className="absolute left-[16%] top-[36%] z-10 h-[clamp(0.2rem,1cqw,0.4rem)] w-[clamp(0.2rem,1cqw,0.4rem)] rounded-full border border-black/20 shadow-[0_0_0_1px_rgba(255,255,255,0.35)]"
-          style={{ backgroundColor: getIndicatorColor(compactState), transform: "matrix(1,0.05,0,1,0,0)" }}
-          aria-hidden="true"
-        />
         <Image
-          src={`/assets/room/pomodoro${isHovered ? "_hover" : ""}.png`}
+          src="/assets/room/pomodoro.png"
           alt="Pomodoro timer"
           fill
           sizes="100vw"
           draggable={false}
-          className="object-contain drop-shadow-2xl"
+          className="pointer-events-none object-contain drop-shadow-2xl"
         />
         <div
-          className="pointer-events-none absolute inset-0 flex items-center justify-center content-center font-mono translate-x-[-0.3em] translate-y-[0.3em] text-[clamp(0.45rem,12cqw,0.9rem)] font-semibold tracking-[0.16em] tabular-nums text-[#e2d3bf]"
-          style={{ transform: "matrix(1,0.05,0,1,0,0)" }}
-        >
-          {compactLabel}
+          className="absolute top-[36%] left-[16%] z-10 h-[clamp(0.2rem,1cqw,0.4rem)] w-[clamp(0.2rem,1cqw,0.4rem)] rounded-full border border-black/20 shadow-[0_0_0_1px_rgba(255,255,255,0.35)] transition-transform"
+          style={{
+            backgroundColor: getIndicatorColor(compactState),
+            transform: "matrix(1,0.05,0,1,0,0)",
+          }}
+          aria-hidden="true"
+        />
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center content-center translate-x-[-0.3em] translate-y-[0.3em]">
+          <div
+            className="font-mono font-semibold tracking-[0.16em] tabular-nums text-[#e2d3bf]"
+            style={{
+              fontSize: "clamp(0.45rem,12cqw,0.9rem)",
+              transform: "matrix(1,0.05,0,1,0,0)",
+            }}
+          >
+            {compactLabel}
+          </div>
         </div>
-      </button>
+      </ClickableWrap>
 
       <section
         id="pomodoro-modal-panel"
