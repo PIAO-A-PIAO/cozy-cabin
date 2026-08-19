@@ -32,6 +32,12 @@ const INITIAL_COMPACT_STATE: CompactTimerState = {
   totalSessions: 1,
 };
 
+function getIndicatorColor(state: CompactTimerState) {
+  if (state.status === "idle") return "#e2d3bf";
+  if (state.timerMode === "focus") return "#22c55e";
+  return "#f59e0b";
+}
+
 function formatTime(seconds: number) {
   const minute = Math.floor(seconds / 60);
   const second = seconds % 60;
@@ -41,10 +47,11 @@ function formatTime(seconds: number) {
 export default function PomodoroModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("settings");
+  const [isHovered, setIsHovered] = useState(false);
   const [sessions, setSessions] = useState<FocusSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [idleTimeLabel, setIdleTimeLabel] = useState<string>()
+  const [idleTimeLabel, setIdleTimeLabel] = useState<string>();
   const [compactState, setCompactState] =
     useState<CompactTimerState>(INITIAL_COMPACT_STATE);
 
@@ -74,7 +81,7 @@ export default function PomodoroModal() {
   }, []);
 
   useEffect(() => {
-    if (compactState.status !== "idle") return
+    if (compactState.status !== "idle") return;
 
     const updateClock = () => {
       setIdleTimeLabel(
@@ -83,17 +90,17 @@ export default function PomodoroModal() {
           minute: "2-digit",
           hour12: false,
         }),
-      )
-    }
-    updateClock()
-    const id = setInterval(updateClock, 1000)
+      );
+    };
+    updateClock();
+    const id = setInterval(updateClock, 1000);
     return () => clearInterval(id);
-  }, [compactState])
+  }, [compactState.status]);
 
   const compactLabel =
     compactState.status === "idle"
       ? idleTimeLabel
-      : `${compactState.timerMode === "focus" ? "Focus" : "Break"} - ${formatTime(compactState.timeRemaining)}`;
+      : formatTime(compactState.timeRemaining);
 
   const handleClose = () => {
     setViewMode("settings");
@@ -105,24 +112,32 @@ export default function PomodoroModal() {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="absolute left-[60%] top-[48%] aspect-[207/154] w-[7%] -translate-x-1/2"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={`absolute left-[60%] top-[48%] -translate-x-1/2 [container-type:inline-size] ${
+          isHovered ? "aspect-[211/154] w-[7.1%]" : "aspect-[207/154] w-[7%]"
+        }`}
         aria-label="Open pomodoro timer"
       >
+        <div
+          className="absolute left-[16%] top-[36%] z-10 h-[clamp(0.2rem,1cqw,0.4rem)] w-[clamp(0.2rem,1cqw,0.4rem)] rounded-full border border-black/20 shadow-[0_0_0_1px_rgba(255,255,255,0.35)]"
+          style={{ backgroundColor: getIndicatorColor(compactState), transform: "matrix(1,0.05,0,1,0,0)" }}
+          aria-hidden="true"
+        />
         <Image
-          src="/assets/room/pomodoro.png"
+          src={`/assets/room/pomodoro${isHovered ? "_hover" : ""}.png`}
           alt="Pomodoro timer"
           fill
           sizes="100vw"
           draggable={false}
           className="object-contain drop-shadow-2xl"
         />
-
-      <div
-        className="absolute left-[26%] top-[41%] content-center"
-        style={{transform: "matrix(1,0.05,0,1,0,0)"}}
-      >
+        <div
+          className="pointer-events-none absolute inset-0 flex items-center justify-center content-center font-mono translate-x-[-0.3em] translate-y-[0.3em] text-[clamp(0.45rem,12cqw,0.9rem)] font-semibold tracking-[0.16em] tabular-nums text-[#e2d3bf]"
+          style={{ transform: "matrix(1,0.05,0,1,0,0)" }}
+        >
           {compactLabel}
-      </div>
+        </div>
       </button>
 
       <section
