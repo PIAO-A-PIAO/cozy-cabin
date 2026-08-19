@@ -60,7 +60,7 @@ const foregroundAssets = [
     src: "/assets/room/radio.png",
     alt: "Radio",
     wrapperClassName:
-      "absolute left-[55%] top-[39%] aspect-[294/199] w-[11%] -translate-x-1/2",
+      "absolute left-[55%] top-[39%] aspect-[321/246] w-[11%] -translate-x-1/2",
   },
   {
     src: "/assets/room/book.png",
