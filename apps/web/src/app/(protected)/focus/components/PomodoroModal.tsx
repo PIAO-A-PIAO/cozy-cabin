@@ -126,7 +126,7 @@ export default function PomodoroModal() {
           className="pointer-events-none object-contain drop-shadow-2xl"
         />
         <div
-          className="absolute top-[36%] left-[16%] z-10 h-[clamp(0.2rem,1cqw,0.4rem)] w-[clamp(0.2rem,1cqw,0.4rem)] rounded-full border border-black/20 shadow-[0_0_0_1px_rgba(255,255,255,0.35)] transition-transform"
+          className="absolute top-[30%] left-[12.5%] z-10 h-[clamp(0.2rem,1cqw,0.4rem)] w-[clamp(0.2rem,1cqw,0.4rem)] rounded-full border border-black/20 shadow-[0_0_0_1px_rgba(255,255,255,0.35)] transition-transform"
           style={{
             backgroundColor: getIndicatorColor(compactState),
             transform: "matrix(1,0.05,0,1,0,0)",
