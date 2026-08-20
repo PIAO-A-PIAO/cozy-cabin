@@ -3,11 +3,13 @@
 import { useState } from "react";
 import ClickableWrap from "../../home/components/ClickableWrap";
 import Image from "next/image";
+import type { Track } from "@/lib/api/track";
 import Player from "./Player";
 import Playlist from "./Playlist";
 
 export default function RadioModal() {
   const [isOpen, setIsOpen] = useState(false);
+  const [currentMusic, setCurrentMusic] = useState<Track | null>(null);
 
   return (
     <>
@@ -50,10 +52,13 @@ export default function RadioModal() {
           <div className="mt-8 flex min-h-0 flex-1 flex-col gap-4">
             
             <div className="min-h-0 flex-1 rounded-3xl border border-white/60 bg-white/80 p-4 shadow-[0_12px_40px_rgba(63,38,17,0.08)] backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80 sm:p-6">
-              <Playlist />
+              <Playlist
+                currentMusic={currentMusic}
+                setCurrentMusic={setCurrentMusic}
+              />
             </div>
             <div className="shrink-0 rounded-3xl border border-white/60 bg-white/80 p-4 shadow-[0_12px_40px_rgba(63,38,17,0.08)] backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80 sm:p-6">
-              <Player />
+              <Player currentMusic={currentMusic} />
             </div>
           </div>
         </div>
