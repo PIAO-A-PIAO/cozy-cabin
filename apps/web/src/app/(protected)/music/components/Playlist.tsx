@@ -15,9 +15,14 @@ function formatDuration(duration: number) {
 type PlaylistProps = {
   currentMusic: Track | null;
   setCurrentMusic: Dispatch<SetStateAction<Track | null>>;
+  onTracksLoaded: (tracks: Track[]) => void;
 };
 
-export default function Playlist({ currentMusic, setCurrentMusic }: PlaylistProps) {
+export default function Playlist({
+  currentMusic,
+  setCurrentMusic,
+  onTracksLoaded,
+}: PlaylistProps) {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +30,9 @@ export default function Playlist({ currentMusic, setCurrentMusic }: PlaylistProp
   useEffect(() => {
     const loadTracks = async () => {
       try {
-        setTracks(await getTracks());
+        const loadedTracks = await getTracks();
+        setTracks(loadedTracks);
+        onTracksLoaded(loadedTracks);
       } catch {
         setError("Unable to load tracks.");
       } finally {
@@ -34,7 +41,7 @@ export default function Playlist({ currentMusic, setCurrentMusic }: PlaylistProp
     };
 
     loadTracks();
-  }, []);
+  }, [onTracksLoaded]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">

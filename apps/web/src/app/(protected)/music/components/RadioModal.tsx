@@ -10,6 +10,7 @@ import Playlist from "./Playlist";
 export default function RadioModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [currentMusic, setCurrentMusic] = useState<Track | null>(null);
+  const [tracks, setTracks] = useState<Track[]>([]);
 
   return (
     <>
@@ -55,10 +56,15 @@ export default function RadioModal() {
               <Playlist
                 currentMusic={currentMusic}
                 setCurrentMusic={setCurrentMusic}
+                onTracksLoaded={setTracks}
               />
             </div>
             <div className="shrink-0 rounded-3xl border border-white/60 bg-white/80 p-4 shadow-[0_12px_40px_rgba(63,38,17,0.08)] backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80 sm:p-6">
-              <Player currentMusic={currentMusic} />
+              <Player
+                currentMusic={currentMusic}
+                tracks={tracks}
+                setCurrentMusic={setCurrentMusic}
+              />
             </div>
           </div>
         </div>
