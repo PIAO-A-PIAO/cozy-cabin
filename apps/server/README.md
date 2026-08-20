@@ -31,6 +31,14 @@
 $ npm install
 ```
 
+## Add a track row to the database
+
+From `apps/server` in PowerShell:
+
+```powershell
+node -e "const { PrismaClient } = require('@prisma/client'); const prisma = new PrismaClient(); prisma.track.create({ data: { title: 'Cozy Cabin', url: './public/music/cozy_cabin.mp3', duration: 145 } }).then((track) => { console.log(track); return prisma.`$disconnect(); }).catch(async (err) => { console.error(err); await prisma.`$disconnect(); process.exit(1); })"
+```
+
 ## Compile and run the project
 
 ```bash
