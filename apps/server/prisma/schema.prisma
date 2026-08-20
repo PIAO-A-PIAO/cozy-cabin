@@ -67,3 +67,13 @@ model FocusSession {
 
   @@index([userId, createdAt])
 }
+
+model Track {
+  id       String   @id @default(cuid())
+  title    String
+  url      String
+  duration Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
