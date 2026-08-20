@@ -4,6 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import CountDown from "./CountDown";
 import FocusPlan from "./FocusPlan";
+import {
+  createFocusSession,
+  type FocusSession as FocusSessionRecord,
+} from "@/lib/api/focus";
 
 type StatusType = "idle" | "running" | "paused";
 export type TimerModeType = "focus" | "break";
@@ -30,15 +34,6 @@ const BUTTON_LABELS: Record<StatusType, string> = {
   paused: "Resume",
 };
 
-type FocusSessionRecord = {
-  id: string;
-  plannedDurationMinutes: number;
-  actualDurationMinutes: number;
-  createdAt: string;
-  updatedAt: string;
-  userId: string;
-};
-
 type PomodoroTimerProps = {
   onSessionRecorded?: (session: FocusSessionRecord) => void;
   onCompactStateChange?: (state: {
@@ -49,28 +44,6 @@ type PomodoroTimerProps = {
     totalSessions: number;
   }) => void;
 };
-
-async function createFocusSession(
-  plannedDurationMinutes: number,
-  actualDurationMinutes: number,
-) {
-  const res = await fetch("/api/focus-sessions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      plannedDurationMinutes,
-      actualDurationMinutes,
-    }),
-  });
-
-  if (!res.ok) {
-    throw new Error("Failed to create focus session");
-  }
-
-  return (await res.json()) as FocusSessionRecord;
-}
 
 function PomodoroTimer({
   onSessionRecorded,

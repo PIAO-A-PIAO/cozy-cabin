@@ -5,15 +5,7 @@ import { useEffect, useState } from "react";
 import ClickableWrap from "../../home/components/ClickableWrap";
 import FocusSessionHistory from "./FocusSessionHistory";
 import PomodoroSettings from "./PomodoroSettings";
-
-export type FocusSession = {
-  id: string;
-  plannedDurationMinutes: number;
-  actualDurationMinutes: number;
-  createdAt: string;
-  updatedAt: string;
-  userId: string;
-};
+import { getFocusSessions, type FocusSession } from "@/lib/api/focus";
 
 type ViewMode = "settings" | "history";
 
@@ -62,14 +54,7 @@ export default function PomodoroModal() {
   useEffect(() => {
     const loadSessions = async () => {
       try {
-        const res = await fetch("/api/focus-sessions");
-
-        if (!res.ok) {
-          throw new Error("Failed to load focus sessions");
-        }
-
-        const data = (await res.json()) as FocusSession[];
-        setSessions(data);
+        setSessions(await getFocusSessions());
       } catch {
         setError("Unable to load focus session data.");
       } finally {
