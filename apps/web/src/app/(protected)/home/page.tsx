@@ -1,9 +1,10 @@
 import Image from "next/image";
 import PomodoroModal from "../focus/components/PomodoroModal";
+import RadioModal from "../music/components/RadioModal";
 
 const foregroundAssets = [
   {
-    src: "/assets/room/shelf.png",
+    src: "/assets/room/flower_shelf.png",
     alt: "Flower shelf",
     wrapperClassName:
       "absolute left-[2%] top-[32%] aspect-[384/772] w-[16%]",
@@ -57,12 +58,6 @@ const foregroundAssets = [
       "absolute left-[22%] top-[30%] aspect-[230/379] w-[8%]",
   },
   {
-    src: "/assets/room/radio.png",
-    alt: "Radio",
-    wrapperClassName:
-      "absolute left-[55%] top-[39%] aspect-[321/246] w-[11%] -translate-x-1/2",
-  },
-  {
     src: "/assets/room/book.png",
     alt: "Book",
     wrapperClassName:
@@ -90,7 +85,7 @@ export default function HomePage() {
       <section className="relative flex min-h-[calc(100vh-3.5rem)] w-full items-center justify-center p-4">
         <div className="relative aspect-[16/9] h-[calc(100vh-5.5rem)] max-h-full w-auto overflow-hidden rounded-[2rem] border border-white/45 shadow-[0_30px_100px_rgba(63,38,17,0.2)]">
           <Image
-            src="/assets/background.png"
+            src="/assets/room/background.png"
             alt="Room background"
             fill
             priority
@@ -125,8 +120,8 @@ export default function HomePage() {
                 />
               </div>
             ))}
+            <RadioModal />
             <PomodoroModal />
-
           </div>
         </div>
       </section>

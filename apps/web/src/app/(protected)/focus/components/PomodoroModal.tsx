@@ -112,7 +112,7 @@ export default function PomodoroModal() {
       <ClickableWrap
         onClick={() => setIsOpen(true)}
         hoverSrc="/assets/room/pomodoro_highlight.png"
-        defaultWrapperClassName="absolute left-[60%] top-[48%] aspect-[207/154] w-[7%] -translate-x-1/2 [container-type:inline-size]"
+        defaultWrapperClassName="absolute left-[60%] top-[33%] aspect-[207/154] w-[7%] -translate-x-1/2 [container-type:inline-size]"
         hoverClassName="object-contain drop-shadow-2xl scale-105 translate-y-[0.08em]"
         alt="Pomodoro timer"
         ariaLabel="Open pomodoro timer"
@@ -133,7 +133,7 @@ export default function PomodoroModal() {
           }}
           aria-hidden="true"
         />
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center content-center translate-x-[-0.3em] translate-y-[0.3em]">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center content-center translate-x-[-0.3em] translate-y-[0.2em]">
           <div
             className="font-mono font-semibold tracking-[0.16em] tabular-nums text-[#e2d3bf]"
             style={{
